@@ -4,21 +4,26 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>67 Counter · Taqneeq 19.0</title>
-<link rel="icon" href="favicon.ico" />
+<link rel="icon" type="image/png" href="tq-icon-64.png" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
 <meta name="description" content="How many 6-7s can you do? Camera-powered 67 counter with a record to break." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Josefin+Sans:wght@300;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
-  /* Taqneeq 19.0 branding (their colours + Josefin Sans, from the Taqneeq site) */
-  .tq-badge {
-    display: inline-flex; align-items: center; gap: 8px; align-self: center; justify-self: start;
-    background: #1e1f26; color: #03dac6; border: 2px solid #03dac6; border-radius: 999px; padding: 3px 14px 3px 4px;
-    font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: clamp(11px, min(1.1vw, 1.8vh), 15px);
-    letter-spacing: .3em; line-height: 1; white-space: nowrap; box-shadow: 0 0 18px rgba(3, 218, 198, .35);
+  /* Taqneeq 19.0 branding: the organisation's gold-on-purple TQ logo + a gold wordmark */
+  .tq-brand {
+    display: inline-flex; align-items: center; gap: clamp(8px, 1.4vh, 14px); align-self: center;
+    background: rgba(18, 2, 31, .72); border: 3px solid #ffc21a; border-radius: 20px;
+    padding: 6px 18px 6px 6px; box-shadow: 0 0 26px rgba(255, 194, 26, .35), 5px 5px 0 #0b0614; text-align: left;
   }
-  .tq-badge img { width: 1.9em; height: 1.9em; border-radius: 50%; background: #fff; padding: 2px; }
-  .tq-badge small { color: #faebd7; font-weight: 300; font-size: .78em; letter-spacing: .25em; }
+  .tq-logo { width: clamp(44px, 8vh, 88px); aspect-ratio: 1; border-radius: 14px; object-fit: cover; display: block; border: 2px solid #ffc21a; }
+  .tq-text b { display: block; font-family: Bungee, sans-serif; font-weight: 400; font-size: clamp(18px, 3.4vh, 34px); line-height: 1; color: #ffc21a; text-shadow: 3px 3px 0 #0b0614; white-space: nowrap; }
+  .tq-text span { display: block; margin-top: 5px; font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: clamp(9px, 1.45vh, 14px); letter-spacing: .28em; color: #faebd7; white-space: nowrap; }
+  /* the big version (intro screen) */
+  .tq-brand.big { flex-direction: column; gap: 10px; padding: 14px 26px 12px; text-align: center; }
+  .tq-brand.big .tq-logo { width: clamp(80px, 15vh, 160px); border-radius: 24px; }
+  .tq-brand.big .tq-text b { font-size: clamp(24px, 5vh, 52px); }
   :root {
     --pink: #ff2bd6;
     --lime: #b6ff00;
@@ -419,6 +424,9 @@
     .hud-timer .t { font-size: 22px; }
     .hud-race { font-size: 10px; }
     .newrec { right: 6px; font-size: 16px; }
+    .tq-brand:not(.big) .tq-logo { width: 46px; }
+    .tq-brand:not(.big) .tq-text b { font-size: 20px; }
+    .tq-brand .tq-text span { letter-spacing: .16em; font-size: 10px; }
     .consent { order: -1; } /* ask about the GIF right under the score on phones */
     .modes { gap: 6px; flex-wrap: nowrap; }
     .mode[data-secs] { font-size: clamp(10px, 2.9vw, 14px); padding: 6px 9px; white-space: nowrap; }
@@ -456,6 +464,14 @@
     .runner { font-size: 18px; }
     .tap-pad { bottom: calc(clamp(92px, 25vw, 130px) * 1.35 + 70px); gap: 28px; }
   }
+  /* shorter phones in portrait: tighter Taqneeq lockup so the home screen doesn't scroll */
+  @media (max-width: 720px) and (max-height: 780px) {
+    #title { gap: 5px; }
+    .tq-brand:not(.big) { padding: 4px 12px 4px 4px; }
+    .tq-brand:not(.big) .tq-logo { width: 38px; border-radius: 10px; }
+    .tq-brand:not(.big) .tq-text b { font-size: 17px; }
+    .hint { font-size: 11px; line-height: 1.3; }
+  }
   /* sideways phones / very short screens */
   @media (max-height: 500px) {
     #title { padding: 38px 16px 12px; gap: 6px; }
@@ -464,7 +480,7 @@
     .logo { font-size: clamp(64px, 24vh, 110px); }
     .record-badge { width: clamp(76px, 22vh, 100px); }
     .record-badge b { font-size: 30px; }
-    .tag, .hint { display: none; }
+    .tag, .hint, .intro-mascot { display: none; }
     .toggles { top: 40px; bottom: auto; }
     .bubble { right: 92%; left: auto; top: -4px; transform-origin: 100% 40%; }
     .bubble::after { left: auto; right: -24px; border-width: 11px 0 11px 22px; border-color: transparent transparent transparent var(--ink); }
@@ -487,7 +503,7 @@
 
 <!-- ============ TITLE ============ -->
 <section class="screen active" id="title">
-  <div class="tq-badge"><img src="favicon.ico" alt="" width="22" height="22" /><span>TAQNEEQ 19.0</span><small>PRESENTS</small></div>
+  <div class="tq-brand"><img class="tq-logo" src="taqneeq-logo.jpg" alt="Taqneeq 19.0 logo" /><div class="tq-text"><b>TAQNEEQ 19.0</b><span>NMIMS MPSTME PRESENTS</span></div></div>
   <div class="title-row">
     <div class="title-mascot" data-mascot="dance"><div class="bubble" id="bubble" role="status" aria-live="polite"><span class="bubble-tag">🎤 MC 67</span><p id="bubbleText"></p></div></div>
     <div class="logo">67</div>
@@ -609,7 +625,7 @@
 
 <div id="intro" role="button" tabindex="0" aria-label="Enter the game">
   <div class="intro-mascot" data-mascot="frenzy"></div>
-  <div class="tq-badge"><img src="favicon.ico" alt="" width="22" height="22" /><span>TAQNEEQ 19.0</span><small>PRESENTS</small></div>
+  <div class="tq-brand big"><img class="tq-logo" src="taqneeq-logo.jpg" alt="Taqneeq 19.0 logo" /><div class="tq-text"><b>TAQNEEQ 19.0</b><span>NMIMS MPSTME TECH FEST PRESENTS</span></div></div>
   <div class="intro-big">TAP ANYWHERE<br>TO ENTER</div>
   <div class="intro-sub">FULLSCREEN + MUSIC 🎵 + 67s 🫴🫴</div>
 </div>
@@ -1505,6 +1521,26 @@ function addCount(x, y) {
    GIF (with your 6/7 stickers and live count drawn on) that goes on the results + leaderboard. */
 const CLIP = { w: 288, h: 216, every: 125, frames: 20 };
 function newClip() { return { frames: [], best: null, bestSpeed: -1, lastAt: 0 }; }
+// Taqneeq 19.0 branding baked into every GIF frame, so the full GIF, the shrunken upload copy
+// and every download all carry it: TQ logo + "TAQNEEQ 19.0" + "NMIMS MPSTME TECH FEST".
+const tqLogo = new Image(); tqLogo.src = "taqneeq-logo.jpg";
+function stampBrand(x) {
+  x.save();
+  x.textAlign = "left"; x.textBaseline = "alphabetic";
+  x.font = "15px Bungee, sans-serif";
+  const w1 = x.measureText("TAQNEEQ 19.0").width;
+  x.font = "600 8.5px 'Josefin Sans', sans-serif";
+  const w2 = x.measureText("NMIMS MPSTME TECH FEST").width;
+  const bw = 50 + Math.max(w1, w2) + 9;
+  x.fillStyle = "rgba(18, 2, 31, .8)"; x.strokeStyle = "#ffc21a"; x.lineWidth = 2;
+  x.beginPath();
+  if (x.roundRect) x.roundRect(5, 5, bw, 44, 10); else x.rect(5, 5, bw, 44);
+  x.fill(); x.stroke();
+  if (tqLogo.complete && tqLogo.naturalWidth) x.drawImage(tqLogo, 9, 9, 36, 36);
+  x.font = "15px Bungee, sans-serif"; x.fillStyle = "#ffc21a"; x.fillText("TAQNEEQ 19.0", 50, 27);
+  x.font = "600 8.5px 'Josefin Sans', sans-serif"; x.fillStyle = "#faebd7"; x.fillText("NMIMS MPSTME TECH FEST", 50, 40);
+  x.restore();
+}
 function recordClip(now, info) {
   const clip = game.clip;
   const vw = video.videoWidth, vh = video.videoHeight;
@@ -1528,8 +1564,7 @@ function recordClip(now, info) {
   x.textBaseline = "alphabetic"; x.textAlign = "right"; x.lineJoin = "round";
   x.font = "44px Bungee, sans-serif"; x.lineWidth = 8; x.strokeStyle = "#0b0614";
   x.strokeText(String(game.count), w - 10, h - 12); x.fillStyle = "#ffe600"; x.fillText(String(game.count), w - 10, h - 12);
-  x.textAlign = "left"; x.font = "14px Bungee, sans-serif"; x.lineWidth = 4;
-  x.strokeText("TAQNEEQ 19.0", 8, 20); x.fillStyle = "#03dac6"; x.fillText("TAQNEEQ 19.0", 8, 20);
+  stampBrand(x);
   clip.frames.push(c);
   if (clip.frames.length > CLIP.frames) clip.frames.shift();
   const sp = speedNow();
