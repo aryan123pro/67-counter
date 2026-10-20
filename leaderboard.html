@@ -56,7 +56,7 @@
   main { width: min(1200px, 100%); margin: 0 auto; padding: 28px 16px 60px; display: grid; gap: 34px; }
 
   header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .brand-head { display: grid; gap: 12px; justify-items: start; }
+  .brand-head { display: grid; gap: 18px; justify-items: start; }
   h1 {
     font-family: "Bungee Shade", Bungee, sans-serif; font-size: clamp(38px, min(6vw, 10vh), 84px); line-height: .9;
     color: var(--yellow); text-shadow: 5px 5px 0 var(--pink), 10px 10px 0 var(--cyan); transform: rotate(-2deg);
@@ -92,6 +92,7 @@
     font-family: Bungee, sans-serif; padding: 10px 16px; transition: transform .25s;
   }
   .toast.on { transform: translateX(-50%) translateY(0); }
+  .toast:not(.on) { visibility: hidden; }
   .btn:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--ink); }
 
   .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
@@ -110,68 +111,57 @@
   }
   h2 small { font-size: .5em; color: var(--cyan); text-shadow: none; margin-left: 8px; }
 
-  /* podium */
-  .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: end; }
-  .spot { text-align: center; cursor: pointer; background: none; border: 0; color: inherit; }
-  .spot .pol {
-    background: #fff; padding: 10px 10px 12px; border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--cyan);
-    transition: transform .15s;
+  /* podium: compact, centred */
+  .board-wrap { width: min(780px, 100%); margin: 0 auto; display: grid; gap: 18px; }
+  .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 2.5vw, 22px); align-items: end; }
+  .spot { text-align: center; cursor: pointer; background: none; border: 0; color: inherit; display: grid; justify-items: center; }
+  .spot .medal { font-size: clamp(24px, 3.4vw, 36px); line-height: 1; margin-bottom: 6px; }
+  .spot .face {
+    width: min(100%, 150px); aspect-ratio: 1; border-radius: 22px; border: 4px solid var(--ink); overflow: hidden;
+    box-shadow: 6px 6px 0 var(--cyan); transition: transform .15s; display: block;
   }
-  .spot:hover .pol { transform: rotate(0deg) scale(1.03) !important; }
-  .spot:nth-child(1) .pol { transform: rotate(-3deg); }
-  .spot:nth-child(2) .pol { transform: rotate(2deg); box-shadow: 10px 10px 0 var(--yellow); }
-  .spot:nth-child(3) .pol { transform: rotate(4deg); box-shadow: 8px 8px 0 var(--pink); }
-  .spot .ph { aspect-ratio: 4/3; width: 100%; object-fit: cover; display: block; background: #2a1b40; }
-  .spot .nm { font-family: Bungee, sans-serif; color: var(--ink); font-size: clamp(14px, 2vw, 22px); margin-top: 8px; overflow-wrap: anywhere; }
+  .spot:nth-child(2) .face { width: min(100%, 176px); box-shadow: 7px 7px 0 var(--yellow); }
+  .spot:nth-child(3) .face { box-shadow: 6px 6px 0 var(--pink); }
+  .spot:hover .face { transform: translateY(-4px) rotate(-2deg); }
+  .spot .face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .spot .nm { font-family: Bungee, sans-serif; font-size: clamp(13px, 1.8vw, 18px); margin-top: 10px; overflow-wrap: anywhere; line-height: 1.1; }
   .spot .sc {
-    font-family: Bungee, sans-serif; font-size: clamp(36px, 6vw, 72px); line-height: 1; margin-top: 12px;
-    color: var(--yellow); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--pink);
+    font-family: Bungee, sans-serif; font-size: clamp(28px, 4.4vw, 50px); line-height: 1; margin-top: 2px;
+    color: var(--yellow); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--pink);
   }
-  .spot .medal { font-size: clamp(34px, 5vw, 54px); display: block; margin-bottom: 4px; }
   .spot .block {
-    margin-top: 10px; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 10px 10px 0 0;
-    font-family: Bungee, sans-serif; font-size: 30px; display: grid; place-content: center;
+    width: 100%; margin-top: 8px; background: var(--paper); color: var(--ink); border: 3px solid var(--ink); border-radius: 10px 10px 0 0;
+    font-family: Bungee, sans-serif; font-size: 20px; display: grid; place-content: center;
   }
-  .spot:nth-child(2) .block { height: 130px; background: var(--yellow); }
-  .spot:nth-child(1) .block { height: 90px; }
-  .spot:nth-child(3) .block { height: 60px; }
-  .podium .spot:nth-child(2) { order: 0; }
+  .spot:nth-child(2) .block { height: 64px; background: var(--yellow); }
+  .spot:nth-child(1) .block { height: 44px; }
+  .spot:nth-child(3) .block { height: 30px; }
 
-  /* rankings list */
-  .rankings { list-style: none; display: grid; gap: 10px; }
+  /* rankings list: one slim line per player */
+  .rankings { list-style: none; display: grid; gap: 8px; }
   .row {
-    display: grid; grid-template-columns: 56px 54px minmax(0, 1fr) auto auto; gap: 14px; align-items: center;
-    background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 16px; padding: 8px 14px;
-    box-shadow: 5px 5px 0 var(--pink); cursor: pointer; width: 100%; text-align: left;
+    display: grid; grid-template-columns: 44px 40px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+    background: rgba(255, 248, 231, .06); color: var(--paper); border: 2px solid rgba(255, 248, 231, .14); border-radius: 14px; padding: 6px 14px 6px 10px;
+    cursor: pointer; width: 100%; text-align: left; transition: background .15s, transform .15s;
   }
-  .row:hover { transform: translateX(4px); }
-  .row .pos { font-family: Bungee, sans-serif; font-size: 22px; }
-  .row .ava, .ava { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 3px solid var(--ink); background: #2a1b40; display: block; }
-  .row .nm { font-family: Bungee, sans-serif; font-size: 20px; overflow-wrap: anywhere; }
-  .row .rk { font-size: 13px; font-weight: 700; opacity: .8; }
-  .row .when { font-size: 12px; opacity: .7; text-align: right; }
-  .row .sc { font-family: Bungee, sans-serif; font-size: 34px; color: var(--pink); }
+  .row:hover { background: rgba(255, 248, 231, .12); transform: translateX(3px); }
+  .row .pos { font-family: Bungee, sans-serif; font-size: 16px; color: var(--muted, #b9adc9); text-align: center; }
+  .row .ava, .ava { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; display: block; overflow: hidden; }
+  .row .nm { font-family: Bungee, sans-serif; font-size: 17px; overflow-wrap: anywhere; }
+  .row .nm .gif { font-size: 12px; margin-left: 6px; opacity: .8; }
+  .row .sc { font-family: Bungee, sans-serif; font-size: 24px; color: var(--yellow); }
+  .tap-hint { text-align: center; font-size: 13px; font-weight: 700; opacity: .65; }
 
-  /* profiles grid */
-  .profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; }
-  .card {
-    background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 22px; overflow: hidden;
-    box-shadow: 8px 8px 0 var(--cyan); cursor: pointer; text-align: left; padding: 0; transition: transform .15s;
-  }
-  .card:nth-child(3n+2) { box-shadow: 8px 8px 0 var(--pink); }
-  .card:nth-child(3n) { box-shadow: 8px 8px 0 var(--lime); }
-  .card:hover { transform: translate(-3px,-3px) rotate(-1deg); }
-  .card .cover { aspect-ratio: 4/3; width: 100%; object-fit: cover; display: block; background: #2a1b40; border-bottom: 4px solid var(--ink); }
-  .card .body { padding: 12px 14px 14px; display: grid; gap: 8px; }
-  .card .nm { font-family: Bungee, sans-serif; font-size: 22px; overflow-wrap: anywhere; }
+  /* initials tile for players without a GIF */
+  .initials { display: grid !important; place-items: center; font-family: Bungee, sans-serif; color: #fff; text-shadow: 2px 2px 0 rgba(0,0,0,.35); }
+  .face .initials { width: 100%; height: 100%; font-size: clamp(30px, 5vw, 54px); }
+  .ava.initials { font-size: 15px; }
+  .prof-head .big.initials { font-size: 64px; }
+
   .badge {
     display: inline-block; font-family: Bungee, sans-serif; font-size: 13px; background: var(--yellow);
     border: 3px solid var(--ink); border-radius: 10px; padding: 3px 8px; transform: rotate(-2deg); justify-self: start;
   }
-  .bests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .bests div { background: var(--ink); color: var(--paper); border-radius: 10px; padding: 6px 4px; text-align: center; }
-  .bests b { display: block; font-family: Bungee, sans-serif; font-size: 20px; color: var(--lime); }
-  .bests small { font-size: 10px; }
   .meta { font-size: 12px; font-weight: 700; opacity: .8; }
 
   .noimg { display: grid !important; place-items: center; font-family: Bungee, sans-serif; color: var(--yellow); font-size: 48px; }
@@ -214,12 +204,11 @@
   .history td.n { font-family: Bungee, sans-serif; color: var(--pink); }
 
   @media (max-width: 720px) {
-    .podium { gap: 10px; }
-    .spot .block { font-size: 20px; }
-    .row { grid-template-columns: 34px 44px minmax(0, 1fr) auto; gap: 10px; }
-    .row .ava { width: 44px; height: 44px; }
-    .row .when { display: none; }
-    .row .sc { font-size: 26px; }
+    .row { grid-template-columns: 30px 36px minmax(0, 1fr) auto; gap: 10px; padding: 6px 12px 6px 8px; }
+    .row .ava { width: 36px; height: 36px; }
+    .row .nm { font-size: 15px; }
+    .row .sc { font-size: 20px; }
+    .spot .block { font-size: 16px; }
     .prof-head { grid-template-columns: 1fr; justify-items: center; text-align: center; }
     .prof-head .big { width: 160px; height: 160px; }
     .prof-stats { grid-template-columns: repeat(2, 1fr); }
@@ -238,15 +227,11 @@
   </header>
   <p class="note" id="note">Scores and GIFs are saved on this device only, and stay after you reload.</p>
 
-  <section>
+  <section class="board-wrap">
     <h2 id="topTitle">TOP 67ERS <small>30 SECONDS</small></h2>
     <div id="podium"></div>
     <ol class="rankings" id="rankings"></ol>
-  </section>
-
-  <section>
-    <h2>PLAYER PROFILES <small>tap anyone</small></h2>
-    <div class="profiles" id="profiles"></div>
+    <p class="tap-hint" id="tapHint" hidden>tap anyone to see their GIFs 🎞️</p>
   </section>
 </main>
 
@@ -288,6 +273,17 @@ const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls)
 function photo(src, cls, alt = "") {
   if (src) { const i = new Image(); i.src = src; i.alt = alt; i.className = cls; i.loading = "lazy"; return i; }
   const d = el("div", cls + " noimg", "67"); return d;
+}
+// a player's picture: their GIF if they have one, otherwise their initials on a colour from their name
+const PALETTE = ["#ff2bd6", "#00b8cc", "#7a3cff", "#ff7a00", "#1fae5b", "#e8364f", "#3d7bff", "#c28a00"];
+function face(name, src, cls) {
+  if (src) { const i = new Image(); i.src = src; i.alt = `${name} mid-67`; i.className = cls; i.loading = "lazy"; return i; }
+  const words = name.trim().split(/\s+/);
+  const ini = (words.length > 1 ? words[0][0] + words[1][0] : name.replace(/[^\p{L}\p{N}]/gu, "").slice(0, 1)).toUpperCase() || "67";
+  let h = 0; for (const ch of name.toLowerCase()) h = (h * 31 + ch.codePointAt(0)) >>> 0;
+  const d = el("div", `${cls} initials`, ini);
+  d.style.background = PALETTE[h % PALETTE.length];
+  return d;
 }
 const when = (iso) => {
   const d = new Date(iso); if (isNaN(d)) return "";
@@ -334,55 +330,38 @@ function render() {
   const podium = $("#podium"), list = $("#rankings");
   podium.replaceChildren(); list.replaceChildren();
   podium.className = "";
+  $("#tapHint").hidden = !ranked.length;
   if (!ranked.length) {
     const e = el("div", "empty", "No 67s yet. Be the first legend.");
     const a = el("a", "btn", "▶ GO 67"); a.href = "./"; e.append(el("br"), a);
     podium.append(e);
-  } else {
-    podium.className = "podium";
-    // visual order: 2nd, 1st, 3rd
-    const slots = [ranked[1], ranked[0], ranked[2]];
-    const medals = ["🥈", "👑", "🥉"];
-    slots.forEach((r, i) => {
-      const spot = el("button", "spot");
-      if (!r) { spot.style.visibility = "hidden"; podium.append(spot); return; }
-      spot.addEventListener("click", () => openProfile(key(r.name)));
-      spot.append(el("span", "medal", medals[i]));
-      const pol = el("div", "pol");
-      pol.append(photo(r.photo, "ph", `${r.name} mid-67`), el("div", "nm", r.name));
-      spot.append(pol, el("div", "sc", r.score), el("div", "block", ["2", "1", "3"][i]));
-      podium.append(spot);
-    });
-    ranked.slice(3, 50).forEach((r, i) => {
-      const li = el("li");
-      const row = el("button", "row");
-      row.addEventListener("click", () => openProfile(key(r.name)));
-      const who = el("div");
-      who.append(el("div", "nm", r.name), el("div", "rk", r.rank || ""));
-      row.append(el("span", "pos", `#${i + 4}`), photo(r.photo, "ava"), who, el("span", "when", when(r.at)), el("span", "sc", r.score));
-      li.append(row); list.append(li);
-    });
+    return;
   }
-
-  // profiles: everyone, best overall first
-  const ps = players().sort((a, b) => b.bestScore - a.bestScore);
-  const grid = $("#profiles");
-  grid.replaceChildren();
-  if (!ps.length) grid.append(el("div", "empty", "No players yet."));
-  for (const p of ps) {
-    const card = el("button", "card");
-    card.addEventListener("click", () => openProfile(key(p.name)));
-    const body = el("div", "body");
-    const bests = el("div", "bests");
-    for (const [v, l] of [[p.bestScore, "BEST"], [p.runs.length, "ROUNDS"], [`${p.peak.toFixed(1)}/s`, "PEAK"]]) {
-      const d = el("div"); d.append(el("b", null, v), el("small", null, l)); bests.append(d);
-    }
-    body.append(el("div", "nm", p.name));
-    if (p.title) body.append(el("span", "badge", p.title));
-    body.append(bests, el("div", "meta", `${p.runs.length} round${p.runs.length === 1 ? "" : "s"} · ${p.total} total 67s · last ${when(p.runs[0].at)}`));
-    card.append(photo(p.avatar, "cover", `${p.name}`), body);
-    grid.append(card);
-  }
+  // each player's picture: their best GIF, if they've posted any
+  const avatars = new Map(players().map((p) => [key(p.name), p.avatar]));
+  podium.className = "podium";
+  // visual order: 2nd, 1st, 3rd
+  const slots = [ranked[1], ranked[0], ranked[2]];
+  const medals = ["🥈", "👑", "🥉"];
+  slots.forEach((r, i) => {
+    const spot = el("button", "spot");
+    if (!r) { spot.style.visibility = "hidden"; podium.append(spot); return; }
+    spot.addEventListener("click", () => openProfile(key(r.name)));
+    const fr = el("div", "face");
+    fr.append(face(r.name, avatars.get(key(r.name)), ""));
+    spot.append(el("span", "medal", medals[i]), fr, el("div", "nm", r.name), el("div", "sc", r.score), el("div", "block", ["2", "1", "3"][i]));
+    podium.append(spot);
+  });
+  ranked.slice(3, 50).forEach((r, i) => {
+    const li = el("li");
+    const row = el("button", "row");
+    row.addEventListener("click", () => openProfile(key(r.name)));
+    const av = avatars.get(key(r.name));
+    const nm = el("div", "nm", r.name);
+    if (av) nm.append(el("span", "gif", "🎞️"));
+    row.append(el("span", "pos", `${i + 4}`), face(r.name, av, "ava"), nm, el("span", "sc", r.score));
+    li.append(row); list.append(li);
+  });
 }
 
 function openProfile(k) {
@@ -404,7 +383,7 @@ function openProfile(k) {
     const d = el("div"); d.append(el("b", null, v), el("small", null, l)); stats.append(d);
   }
   info.append(stats);
-  head.append(photo(p.avatar, "big", p.name), info);
+  head.append(face(p.name, p.avatar, "big"), info);
 
   const wallSec = el("div", "prof-sec");
   wallSec.append(el("h4", null, "🎞️ GIF WALL"));
