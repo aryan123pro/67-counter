@@ -1,5 +1,5 @@
 /* GIF helpers shared by the game and the leaderboard page:
-   - stampBrand: the Taqneeq 19.0 branding baked into every GIF frame
+   - stampBrand: the small Taqneeq 19.0 watermark baked into every GIF frame
    - encodeGif / shrinkForUpload: turn frames into a GIF, small enough for the shared board
    - rebrandGif: decode an older posted GIF, stamp every frame, re-encode (admin re-brand tool) */
 
@@ -12,23 +12,56 @@ tqLogo.src = "taqneeq-logo.jpg";
 export const logoReady = () =>
   tqLogo.complete && tqLogo.naturalWidth ? Promise.resolve() : new Promise((r) => { tqLogo.onload = r; tqLogo.onerror = r; });
 
-// TQ logo + "TAQNEEQ 19.0" + "NMIMS MPSTME TECH FEST" on a gold-edged panel, top-left of a 288×216 frame
+// A small, see-through watermark in the top-left corner of a 288×216 frame:
+// TQ logo + "TAQNEEQ 19.0" in gold on a light translucent pill, so the video shows through.
 export function stampBrand(x) {
   x.save();
-  x.textAlign = "left"; x.textBaseline = "alphabetic";
-  x.font = "15px Bungee, sans-serif";
-  const w1 = x.measureText("TAQNEEQ 19.0").width;
-  x.font = "600 8.5px 'Josefin Sans', sans-serif";
-  const w2 = x.measureText("NMIMS MPSTME TECH FEST").width;
-  const bw = 50 + Math.max(w1, w2) + 9;
-  x.fillStyle = "rgba(18, 2, 31, .96)"; x.strokeStyle = "#ffc21a"; x.lineWidth = 2;
+  const X = 6, Y = 6, H = 24, LOGO = 18;
+  x.font = "10.5px Bungee, sans-serif";
+  x.textAlign = "left"; x.textBaseline = "middle";
+  const tw = x.measureText("TAQNEEQ 19.0").width;
+  const W = 4 + LOGO + 6 + tw + 8;
+  // pill
   x.beginPath();
-  if (x.roundRect) x.roundRect(5, 5, bw, 44, 10); else x.rect(5, 5, bw, 44);
-  x.fill(); x.stroke();
-  if (tqLogo.complete && tqLogo.naturalWidth) x.drawImage(tqLogo, 9, 9, 36, 36);
-  x.font = "15px Bungee, sans-serif"; x.fillStyle = "#ffc21a"; x.fillText("TAQNEEQ 19.0", 50, 27);
-  x.font = "600 8.5px 'Josefin Sans', sans-serif"; x.fillStyle = "#faebd7"; x.fillText("NMIMS MPSTME TECH FEST", 50, 40);
+  if (x.roundRect) x.roundRect(X, Y, W, H, H / 2); else x.rect(X, Y, W, H);
+  x.fillStyle = "rgba(12, 4, 24, .42)"; x.fill();
+  x.lineWidth = 1; x.strokeStyle = "rgba(255, 194, 26, .55)"; x.stroke();
+  // logo, clipped round
+  if (tqLogo.complete && tqLogo.naturalWidth) {
+    x.save();
+    x.beginPath(); x.arc(X + 3 + LOGO / 2, Y + H / 2, LOGO / 2, 0, Math.PI * 2); x.clip();
+    x.globalAlpha = 0.95; x.drawImage(tqLogo, X + 3, Y + (H - LOGO) / 2, LOGO, LOGO);
+    x.restore();
+  }
+  // wordmark with a soft shadow so it reads on bright backgrounds too
+  x.shadowColor = "rgba(0, 0, 0, .55)"; x.shadowBlur = 2; x.shadowOffsetY = 1;
+  x.fillStyle = "rgba(255, 194, 26, .95)";
+  x.fillText("TAQNEEQ 19.0", X + 4 + LOGO + 6, Y + H / 2 + 1);
   x.restore();
+}
+
+// Older GIFs carry an earlier stamp in the top-left ("67 COUNTER" text, or the big branded panel).
+// Blur that corner in place (feathered so there's no hard edge) and shade it softly, so the old stamp
+// melts into a gentle shadow behind the new see-through watermark.
+function coverOldStamp(x) {
+  const W = 236, H = 84, IN_W = 196, IN_H = 54; // fully covered area, then a soft fade out to W×H
+  const t = document.createElement("canvas"); t.width = W; t.height = H;
+  const tx = t.getContext("2d");
+  tx.filter = "blur(11px)";
+  tx.drawImage(x.canvas, 0, 0, W, H, 0, 0, W, H);
+  tx.filter = "none";
+  tx.fillStyle = "rgba(12, 4, 24, .38)"; tx.fillRect(0, 0, W, H); // soft shade
+  // feather mask: solid over the old stamp, fading out toward the right and bottom edges
+  const m = document.createElement("canvas"); m.width = W; m.height = H;
+  const mx = m.getContext("2d");
+  const gx = mx.createLinearGradient(IN_W, 0, W, 0); gx.addColorStop(0, "#000"); gx.addColorStop(1, "rgba(0,0,0,0)");
+  mx.fillStyle = gx; mx.fillRect(0, 0, W, H);
+  mx.globalCompositeOperation = "destination-in";
+  const gy = mx.createLinearGradient(0, IN_H, 0, H); gy.addColorStop(0, "#000"); gy.addColorStop(1, "rgba(0,0,0,0)");
+  mx.fillStyle = gy; mx.fillRect(0, 0, W, H);
+  tx.globalCompositeOperation = "destination-in";
+  tx.drawImage(m, 0, 0);
+  x.drawImage(t, 0, 0);
 }
 
 /* ---------------- encoding ---------------- */
@@ -86,7 +119,7 @@ export async function rebrandGif(url) {
   if (!type.includes("gif")) { // an old still photo: stamp it and keep it a JPEG
     const img = await createImageBitmap(new Blob([data], { type }));
     const c = frame(), x = c.getContext("2d");
-    x.drawImage(img, 0, 0, FRAME_W, FRAME_H); stampBrand(x);
+    x.drawImage(img, 0, 0, FRAME_W, FRAME_H); coverOldStamp(x); stampBrand(x);
     return c.toDataURL("image/jpeg", 0.85);
   }
 
@@ -99,6 +132,7 @@ export async function rebrandGif(url) {
     const { image } = await decoder.decode({ frameIndex: i });
     const c = frame(), x = c.getContext("2d");
     x.drawImage(image, 0, 0, FRAME_W, FRAME_H);
+    coverOldStamp(x);
     stampBrand(x);
     totalMs += (image.duration || 125000) / 1000;
     image.close();

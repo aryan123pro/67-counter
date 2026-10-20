@@ -29,7 +29,7 @@ const publicRun = (r) => ({
   id: r.id, name: r.name, score: r.score, secs: r.secs, input: r.input, rate: r.rate, peak: r.peak, rank: r.rank, at: r.at,
   // ?v= changes whenever the GIF is replaced, so the long CDN cache never serves an old copy
   photo: r.hasGif ? `/api/gif?id=${r.id}&v=${r.gifV || 1}` : null,
-  branded: Boolean(r.gifBranded), // GIF carries the Taqneeq 19.0 stamp
+  branded: r.gifBranded === true ? 1 : Number(r.gifBranded) || 0, // which Taqneeq watermark version the GIF has (0 = none)
 });
 
 // "data:image/gif;base64,..." → "gif:<base64>" (or null if it isn't a reasonable GIF/JPEG)
@@ -85,7 +85,7 @@ export default async function handler(req, res) {
       if (!clip) return res.status(400).json({ error: String(b.gif || "").length > 100 ? "GIF too big" : "GIF missing" });
       await db.putGif(id, clip);
       run.hasGif = true;
-      run.gifBranded = b.branded === true;
+      run.gifBranded = b.branded === true ? 1 : Math.max(0, Math.min(99, Math.round(Number(b.branded) || 0)));
       run.gifV = (run.gifV || 0) + 1;
       await db.putRun(run);
       return res.status(200).json({ run: publicRun(run) });

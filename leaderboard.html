@@ -287,7 +287,7 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { allRuns, importRuns, exportBackup, deleteRuns, clearAll, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, attachGif } from "./leaderboard-store.js";
+import { allRuns, importRuns, exportBackup, deleteRuns, clearAll, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, attachGif, BRAND_VERSION } from "./leaderboard-store.js";
 import { rebrandGif, canRebrand } from "./gif-tools.js";
 // Inside the game (embedded layer): PLAY / GO 67 just close the layer, keeping fullscreen.
 // Opened directly: go fullscreen on the first tap (browsers need a tap before allowing it).
@@ -329,12 +329,12 @@ function applyMode() {
   $("#adminBtn").textContent = admin ? "🔓 ADMIN ON" : "🔑 ADMIN";
   updateRebrand();
 }
-// admin: GIFs posted before the Taqneeq stamp existed
-const unbranded = () => runs.filter((r) => r.photo && !r.branded);
+// admin: GIFs without the current Taqneeq watermark (none, or an older design)
+const unbranded = () => runs.filter((r) => r.photo && (Number(r.branded) || 0) < BRAND_VERSION);
 function updateRebrand() {
   const n = sharedMode && admin ? unbranded().length : 0;
   $("#rebrandBtn").hidden = !n;
-  if (n && !$("#rebrandBtn").disabled) $("#rebrandBtn").textContent = `🎨 RE-BRAND ${n} OLD GIF${n === 1 ? "" : "S"}`;
+  if (n && !$("#rebrandBtn").disabled) $("#rebrandBtn").textContent = `🎨 UPDATE BRANDING ON ${n} GIF${n === 1 ? "" : "S"}`;
 }
 applyMode();
 let view = { secs: 30, input: "cam" };
@@ -592,7 +592,7 @@ $("#rebrandBtn").addEventListener("click", async () => {
   const todo = unbranded();
   if (!todo.length) return;
   if (!canRebrand()) return toast("Open this page in Chrome or Edge to re-brand GIFs");
-  if (!(await ask(`Re-brand ${todo.length} GIF${todo.length === 1 ? "" : "s"}?`, "Adds the Taqneeq 19.0 stamp (logo + name) to every frame and replaces the GIF on the shared leaderboard.", { yes: "RE-BRAND" }))) return;
+  if (!(await ask(`Re-brand ${todo.length} GIF${todo.length === 1 ? "" : "s"}?`, "Swaps any older stamp for the current Taqneeq 19.0 watermark on every frame and replaces the GIF on the shared leaderboard.", { yes: "RE-BRAND" }))) return;
   const btn = $("#rebrandBtn");
   btn.disabled = true;
   let ok = 0, failed = 0;

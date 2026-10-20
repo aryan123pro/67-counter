@@ -10,6 +10,9 @@
    Run: { id, name, score, secs, input ("cam" | "kbd"), rate, peak, rank, photo (GIF URL or data URL | null), at } */
 
 const API = "/api/runs";
+// Version of the Taqneeq watermark baked into GIFs (gif-tools.js stampBrand). Bump it when the
+// design changes; the leaderboard's admin "re-brand" tool updates GIFs with an older version.
+export const BRAND_VERSION = 2;
 const ADMIN_KEY = "67-admin-key";
 
 /* ---------------- mode detection ---------------- */
@@ -87,7 +90,7 @@ export async function attachGif(run, dataUrl, { admin = false } = {}) {
   const headers = { "Content-Type": "application/json" };
   if (admin) headers["x-admin-key"] = getAdminKey();
   const data = await fetchJson(`${API}?id=${encodeURIComponent(run.id)}`, {
-    method: "PATCH", headers, body: JSON.stringify({ editKey: run.editKey, gif: dataUrl, branded: true }),
+    method: "PATCH", headers, body: JSON.stringify({ editKey: run.editKey, gif: dataUrl, branded: BRAND_VERSION }),
   }, 30000);
   const i = lastShared.findIndex((r) => r.id === run.id);
   if (i >= 0) lastShared[i] = data.run;
