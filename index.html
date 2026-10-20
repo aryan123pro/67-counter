@@ -1509,25 +1509,57 @@ function recordClip(now, info) {
   const sp = speedNow();
   if (clip.frames.length === CLIP.frames && sp >= clip.bestSpeed) { clip.best = clip.frames.slice(); clip.bestSpeed = sp; }
 }
+// Encode clip frames into a GIF, optionally smaller (w×h), with fewer colours, or skipping frames (step).
+async function encodeGif(frames, { w = CLIP.w, h = CLIP.h, colors = 256, step = 1 } = {}) {
+  const { GIFEncoder, quantize, applyPalette } = await import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js");
+  const gif = GIFEncoder();
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  const x = c.getContext("2d", { willReadFrequently: true });
+  for (let i = 0; i < frames.length; i += step) {
+    x.drawImage(frames[i], 0, 0, w, h);
+    const { data } = x.getImageData(0, 0, w, h);
+    const palette = quantize(data, colors);
+    gif.writeFrame(applyPalette(data, palette), w, h, { palette, delay: CLIP.every * step });
+    await new Promise(requestAnimationFrame); // keep the page animating while we encode
+  }
+  gif.finish();
+  return new Blob([gif.bytes()], { type: "image/gif" });
+}
+const toDataUrl = (blob) => new Promise((resolve) => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.readAsDataURL(blob); });
+
+// Full-quality GIF for the results screen / download.
 async function buildGif() {
   const frames = game.clip?.best || game.clip?.frames;
   if (!frames?.length) return;
+  game.gifFrames = frames;
   try {
-    const { GIFEncoder, quantize, applyPalette } = await import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js");
-    const gif = GIFEncoder();
-    for (const f of frames) {
-      const { data } = f.getContext("2d").getImageData(0, 0, CLIP.w, CLIP.h);
-      const palette = quantize(data, 256);
-      gif.writeFrame(applyPalette(data, palette), CLIP.w, CLIP.h, { palette, delay: CLIP.every });
-      await new Promise(requestAnimationFrame); // keep the loader animating while we encode
-    }
-    gif.finish();
-    const blob = new Blob([gif.bytes()], { type: "image/gif" });
-    game.gifUrl = await new Promise((resolve) => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.readAsDataURL(blob); });
+    game.gifBlob = await encodeGif(frames);
+    game.gifUrl = await toDataUrl(game.gifBlob);
   } catch (err) {
     console.warn("GIF encoding failed, keeping a still photo instead:", err);
+    game.gifBlob = null;
     game.gifUrl = frames[frames.length - 1].toDataURL("image/jpeg", 0.85);
   }
+}
+
+// Real camera footage is grainy and makes big GIFs, so the copy that gets posted online is
+// shrunk step by step until it fits the upload limit (the download keeps full quality).
+const UPLOAD_BUDGET = 550 * 1024;
+const UPLOAD_LEVELS = [
+  { w: 240, h: 180, colors: 128 },
+  { w: 208, h: 156, colors: 64 },
+  { w: 208, h: 156, colors: 64, step: 2 },
+  { w: 176, h: 132, colors: 32, step: 2 },
+];
+async function gifForUpload() {
+  if (game.gifBlob && game.gifBlob.size <= UPLOAD_BUDGET) return game.gifUrl;
+  if (!game.gifFrames) return game.gifUrl; // a still JPEG fallback is already small
+  let blob;
+  for (const level of UPLOAD_LEVELS) {
+    blob = await encodeGif(game.gifFrames, level);
+    if (blob.size <= UPLOAD_BUDGET) break;
+  }
+  return toDataUrl(blob);
 }
 
 let hypeTimer;
@@ -1772,7 +1804,7 @@ function showResults() {
   // shared board: ask before the GIF goes public
   const consent = $("#consent");
   consent.hidden = true;
-  game.lastEntry = entry; game.lastPhoto = photo;
+  game.lastEntry = entry;
   if (photo && saving) saving.then(({ saved }) => {
     if (saved.shared && game.lastEntry === entry) { consent.dataset.state = "ask"; consent.hidden = false; }
   });
@@ -1980,13 +2012,13 @@ $("#gifYes").onclick = async () => {
   const consent = $("#consent"), entry = game.lastEntry;
   consent.dataset.state = "posting";
   try {
-    Object.assign(entry, await attachGif(entry, game.lastPhoto));
+    Object.assign(entry, await attachGif(entry, await gifForUpload()));
     consent.dataset.state = "done";
     sfx.fanfare();
   } catch (err) {
     console.warn("GIF upload failed:", err);
     consent.dataset.state = "ask";
-    toast("Couldn't post the GIF — try again");
+    toast(`Couldn't post the GIF (${err.message}) — try again`);
   }
 };
 $("#gifNo").onclick = () => { $("#consent").hidden = true; };

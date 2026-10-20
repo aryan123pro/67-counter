@@ -11,7 +11,7 @@ import crypto from "node:crypto";
 import * as db from "./_db.js";
 
 const VALID_SECS = new Set([15, 30, 60]);
-const MAX_GIF_BYTES = 700 * 1024;
+const MAX_GIF_BYTES = 800 * 1024; // the game shrinks clips to ~550 KB before posting; keeps each Redis write under 1 MB
 
 const clean = (v, n) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, n);
 const num = (v, lo, hi) => { const x = Number(v); return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : lo; };
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
       if (!run) return res.status(404).json({ error: "no such round" });
       if (!b.editKey || !sameSecret(run.editKey, b.editKey)) return res.status(403).json({ error: "not your round" });
       const clip = parseClip(b.gif);
-      if (!clip) return res.status(400).json({ error: "GIF missing or too big" });
+      if (!clip) return res.status(400).json({ error: String(b.gif || "").length > 100 ? "GIF too big" : "GIF missing" });
       await db.putGif(id, clip);
       run.hasGif = true;
       await db.putRun(run);
