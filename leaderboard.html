@@ -61,6 +61,12 @@
   .confirm p { font-weight: 700; margin: 12px 0 20px; }
   .confirm .cbtns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
   .confirm .backup-hint[hidden] { display: none; }
+  [hidden] { display: none !important; }
+  .confirm input { display: block; width: 100%; font: 700 18px "Space Mono", monospace; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 10px; margin: 0 0 12px; }
+  .confirm .err { color: var(--red); margin: 0 0 12px; }
+  .note.live { color: var(--lime); }
+  .note.live::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--lime); margin-right: 8px; animation: blink 1.2s infinite; }
+  @keyframes blink { 50% { opacity: .2; } }
   .confirm .backup-hint { display: block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: underline; background: none; border: 0; cursor: pointer; width: 100%; }
   .head-btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
   .note { font-weight: 700; opacity: .85; margin-top: -18px; }
@@ -210,12 +216,13 @@
     <h1>HALL OF 67</h1>
     <div class="head-btns">
       <button class="btn alt" id="backupBtn" title="Download this device's leaderboard (with photos) as a file">⬇ BACKUP</button>
-      <label class="btn alt" title="Load a backup file into this device's leaderboard">⬆ RESTORE<input type="file" id="restoreInput" accept="application/json,.json" hidden /></label>
+      <button class="btn alt" id="adminBtn" hidden title="Unlock deleting on the shared leaderboard">🔑 ADMIN</button>
+      <label class="btn alt" id="restoreLabel" title="Load a backup file into this device's leaderboard">⬆ RESTORE<input type="file" id="restoreInput" accept="application/json,.json" hidden /></label>
       <button class="btn danger" id="clearAllBtn" title="Delete every score and GIF on this device">🗑 CLEAR ALL</button>
       <a class="btn" href="./">▶ PLAY</a>
     </div>
   </header>
-  <p class="note">Scores and GIFs are saved on this device only, and stay after you reload.</p>
+  <p class="note" id="note">Scores and GIFs are saved on this device only, and stay after you reload.</p>
 
   <div class="filters" role="group" aria-label="Leaderboard filter">
     <span class="lbl">MODE</span>
@@ -240,6 +247,15 @@
 </main>
 
 <dialog id="profile"></dialog>
+<dialog id="adminDlg" class="confirm">
+  <h3>ADMIN PASSWORD</h3>
+  <p>Needed to delete players or clear the shared leaderboard. It's the ADMIN_KEY set in Vercel.</p>
+  <form id="adminForm">
+    <input type="password" id="adminPw" autocomplete="current-password" placeholder="password" aria-label="Admin password" />
+    <p class="err" id="adminErr" hidden>That's not it. Try again.</p>
+    <div class="cbtns"><button class="btn alt" type="button" id="adminCancel">CANCEL</button><button class="btn" type="submit">UNLOCK</button></div>
+  </form>
+</dialog>
 <dialog id="confirm" class="confirm">
   <h3 id="cTitle"></h3>
   <p id="cMsg"></p>
@@ -252,7 +268,7 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { allRuns, importRuns, exportBackup, deleteRuns, clearAll } from "./leaderboard-store.js";
+import { allRuns, importRuns, exportBackup, deleteRuns, clearAll, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin } from "./leaderboard-store.js";
 // Inside the game (embedded layer): PLAY / GO 67 just close the layer, keeping fullscreen.
 // Opened directly: go fullscreen on the first tap (browsers need a tap before allowing it).
 const embedded = new URLSearchParams(location.search).has("embed") && window.parent !== window;
@@ -278,6 +294,21 @@ const MODES = { 15: "15s SPRINT", 30: "30s CLASSIC", 60: "60s MARATHON" };
 $("#marquee").textContent = "HALL OF 67 ✦ SIX SEVEN ✦ 👑 ✦ WHO HAS THE FASTEST HANDS ✦ 🫴🫴 ✦ ".repeat(8);
 
 let runs = await allRuns();
+// shared board: everyone sees it, but only the admin (password from Vercel's ADMIN_KEY) can delete
+const sharedMode = isShared();
+let admin = sharedMode && getAdminKey() ? await checkAdmin(getAdminKey()) : false;
+const canDelete = () => !sharedMode || admin;
+const whereText = () => (sharedMode ? "from the shared leaderboard, for everyone" : "from this device");
+function applyMode() {
+  const note = $("#note");
+  note.textContent = sharedMode ? "LIVE — everyone who plays, on any device, shows up here." : "Scores and GIFs are saved on this device only, and stay after you reload.";
+  note.classList.toggle("live", sharedMode);
+  $("#restoreLabel").hidden = sharedMode;
+  $("#clearAllBtn").hidden = !canDelete();
+  $("#adminBtn").hidden = !(sharedMode && isAdminEnabled());
+  $("#adminBtn").textContent = admin ? "🔓 ADMIN ON" : "🔑 ADMIN";
+}
+applyMode();
 let view = { secs: 30, input: "cam" };
 try { Object.assign(view, JSON.parse(localStorage.getItem("67-lb-view") || "{}")); } catch {}
 
@@ -439,11 +470,13 @@ function openProfile(k) {
   histSec.append(table);
 
   const del = el("button", "btn danger", "🗑 DELETE PROFILE");
-  const actions = el("div", "prof-actions"); actions.append(del); info.append(actions);
+  const actions = el("div", "prof-actions"); actions.append(del);
+  if (canDelete()) info.append(actions);
   del.addEventListener("click", async () => {
     const n = p.runs.length;
-    if (!(await ask(`Delete ${p.name}?`, `This removes their ${n} round${n === 1 ? "" : "s"} and GIF${n === 1 ? "" : "s"} from this device. It can't be undone.`))) return;
-    await deleteRuns(p.runs.map((r) => r.id));
+    if (!(await ask(`Delete ${p.name}?`, `This removes their ${n} round${n === 1 ? "" : "s"} and GIF${n === 1 ? "" : "s"} ${whereText()}. It can't be undone.`))) return;
+    try { await deleteRuns(p.runs.map((r) => r.id)); }
+    catch (err) { return toast(`Couldn't delete: ${err.message}`); }
     runs = await allRuns();
     dlg.close(); render();
     toast(`${p.name} deleted`);
@@ -457,11 +490,29 @@ document.querySelectorAll(".chip[data-secs]").forEach((b) => b.addEventListener(
 document.querySelectorAll(".chip[data-input]").forEach((b) => b.addEventListener("click", () => { view.input = b.dataset.input; render(); }));
 render();
 
-// pick up rounds played in another tab when you come back to this one
-document.addEventListener("visibilitychange", async () => {
-  if (document.hidden) return;
+// keep it fresh: live every 10s on the shared board, or when you come back to this tab
+const signature = (list) => list.map((r) => r.id + (r.photo ? "+" : "")).join();
+async function refresh() {
+  if (document.hidden || document.querySelector("dialog[open]")) return;
   const next = await allRuns();
-  if (next.length !== runs.length) { runs = next; if (!$("#profile").open) render(); }
+  if (signature(next) !== signature(runs)) { runs = next; render(); }
+}
+document.addEventListener("visibilitychange", refresh);
+if (sharedMode) setInterval(refresh, 10000);
+
+$("#adminBtn").addEventListener("click", () => {
+  if (admin) { admin = false; setAdminKey(""); applyMode(); render(); return toast("Admin mode off"); }
+  $("#adminErr").hidden = true; $("#adminPw").value = "";
+  $("#adminDlg").showModal();
+});
+$("#adminCancel").addEventListener("click", () => $("#adminDlg").close());
+$("#adminForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const key = $("#adminPw").value;
+  if (!(await checkAdmin(key))) { $("#adminErr").hidden = false; return; }
+  setAdminKey(key); admin = true;
+  $("#adminDlg").close(); applyMode(); render();
+  toast("Admin mode on — you can delete now");
 });
 
 let toastTimer;
@@ -486,8 +537,9 @@ $("#cBackup").addEventListener("click", () => downloadBackup());
 $("#clearAllBtn").addEventListener("click", async () => {
   if (!runs.length) return toast("Leaderboard is already empty");
   const people = new Set(runs.map((r) => r.name.toLowerCase())).size;
-  if (!(await ask("Clear the whole leaderboard?", `Deletes all ${runs.length} rounds from ${people} player${people === 1 ? "" : "s"}, GIFs included, on this device. It can't be undone.`, { offerBackup: true }))) return;
-  await clearAll();
+  if (!(await ask("Clear the whole leaderboard?", `Deletes all ${runs.length} rounds from ${people} player${people === 1 ? "" : "s"}, GIFs included, ${whereText()}. It can't be undone.`, { offerBackup: true }))) return;
+  try { await clearAll(); }
+  catch (err) { return toast(`Couldn't clear: ${err.message}`); }
   runs = [];
   render();
   toast("Leaderboard cleared 🧹");

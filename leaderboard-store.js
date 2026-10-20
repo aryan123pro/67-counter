@@ -1,8 +1,140 @@
-/* 67 Counter leaderboard storage — lives entirely in the player's own browser (IndexedDB),
-   so the game is a plain static site (deploys to Vercel / any static host as-is).
-   Each run: { id, name, score, secs, input ("cam" | "kbd"), rate, peak, rank, photo (animated GIF data URL of their fastest 2.5s — older runs may hold a JPEG — or null), at (ISO time) }.
-   Photos never leave the device unless the player exports a backup themselves. */
+/* 67 Counter leaderboard storage.
 
+   SHARED mode (deployed on Vercel with Upstash Redis connected): every device reads and writes the
+   same online leaderboard through /api/runs. Scores post automatically; a round's GIF is only
+   uploaded if the player chooses to post it (attachGif). Deleting needs the admin password.
+
+   LOCAL mode (no /api — e.g. served by a plain static server, or the database isn't connected):
+   everything stays in this browser's IndexedDB, exactly like before, and survives reloads.
+
+   Run: { id, name, score, secs, input ("cam" | "kbd"), rate, peak, rank, photo (GIF URL or data URL | null), at } */
+
+const API = "/api/runs";
+const ADMIN_KEY = "67-admin-key";
+
+/* ---------------- mode detection ---------------- */
+let shared = null; // null until checked
+let adminEnabled = false;
+let lastShared = [];
+
+async function fetchJson(url, opts = {}, timeout = 6000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    const r = await fetch(url, { ...opts, signal: ctrl.signal });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(data.error || `HTTP ${r.status}`), { status: r.status });
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** true when the shared online leaderboard is available. */
+export async function detect() {
+  if (shared !== null) return shared;
+  try {
+    const data = await fetchJson(API, { cache: "no-store" });
+    shared = data.shared === true;
+    adminEnabled = Boolean(data.adminEnabled);
+    lastShared = data.runs || [];
+  } catch {
+    shared = false;
+  }
+  return shared;
+}
+export const isShared = () => shared === true;
+export const isAdminEnabled = () => adminEnabled;
+
+/* ---------------- admin (shared mode) ---------------- */
+export function getAdminKey() { try { return localStorage.getItem(ADMIN_KEY) || ""; } catch { return ""; } }
+export function setAdminKey(key) { try { key ? localStorage.setItem(ADMIN_KEY, key) : localStorage.removeItem(ADMIN_KEY); } catch {} }
+/** checks a password against the server's ADMIN_KEY */
+export async function checkAdmin(key) {
+  if (!(await detect()) || !key) return false;
+  try { return (await fetchJson(`${API}?admin=1`, { cache: "no-store", headers: { "x-admin-key": key } })).admin === true; }
+  catch { return false; }
+}
+
+/* ---------------- public API ---------------- */
+/** Every run: the shared board when online, otherwise this device's. */
+export async function allRuns() {
+  if (await detect()) {
+    try { lastShared = (await fetchJson(API, { cache: "no-store" })).runs || []; } catch {}
+    return [...lastShared];
+  }
+  return localAll();
+}
+
+/** Save a finished round. In shared mode the GIF is NOT uploaded here (see attachGif). */
+export async function addRun(run) {
+  if (await detect()) {
+    try {
+      const { name, score, secs, input, rate, peak, rank } = run;
+      const data = await fetchJson(API, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, score, secs, input, rate, peak, rank }) });
+      lastShared.unshift(data.run);
+      return { ...data.run, editKey: data.editKey, shared: true };
+    } catch (err) {
+      console.warn("couldn't reach the shared leaderboard, saving on this device instead:", err);
+    }
+  }
+  return { ...(await localAdd(run)), shared: false };
+}
+
+/** Shared mode: upload the round's GIF after the player agrees to post it. */
+export async function attachGif(run, dataUrl) {
+  const data = await fetchJson(`${API}?id=${encodeURIComponent(run.id)}`, {
+    method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ editKey: run.editKey, gif: dataUrl }),
+  }, 20000);
+  const i = lastShared.findIndex((r) => r.id === run.id);
+  if (i >= 0) lastShared[i] = data.run;
+  return data.run;
+}
+
+/** Permanently delete specific runs (shared mode needs the admin password). */
+export async function deleteRuns(ids) {
+  if (await detect()) {
+    await fetchJson(`${API}?ids=${encodeURIComponent(ids.join(","))}`, { method: "DELETE", headers: { "x-admin-key": getAdminKey() } });
+    lastShared = lastShared.filter((r) => !ids.includes(r.id));
+    return;
+  }
+  return localDelete(ids);
+}
+
+/** Permanently wipe the whole leaderboard (shared mode needs the admin password). */
+export async function clearAll() {
+  if (await detect()) {
+    await fetchJson(`${API}?all=1`, { method: "DELETE", headers: { "x-admin-key": getAdminKey() } });
+    lastShared = [];
+    return;
+  }
+  return localClear();
+}
+
+/** A backup file of whatever leaderboard is showing (shared GIFs are links, local ones are embedded). */
+export async function exportBackup() {
+  const data = { app: "67-counter", version: 1, mode: isShared() ? "shared" : "local", exportedAt: new Date().toISOString(), runs: await allRuns() };
+  return new Blob([JSON.stringify(data)], { type: "application/json" });
+}
+
+/** Merge runs from a backup file into this device's leaderboard (local mode only). */
+export async function importRuns(runs) {
+  const existing = new Set((await localAll()).map((r) => r.id));
+  let added = 0;
+  for (const r of runs) {
+    if (!r || typeof r.name !== "string" || !Number.isFinite(+r.score)) continue;
+    if (r.id && existing.has(r.id)) continue;
+    await localAdd({
+      id: r.id, name: r.name.slice(0, 14), score: +r.score, secs: +r.secs, input: r.input === "kbd" ? "kbd" : "cam",
+      rate: +r.rate || 0, peak: +r.peak || 0, rank: String(r.rank || "").slice(0, 60),
+      photo: typeof r.photo === "string" && r.photo.startsWith("data:image/") ? r.photo : null, at: r.at,
+    });
+    added++;
+  }
+  return added;
+}
+
+/* ---------------- local (IndexedDB) ---------------- */
 const DB_NAME = "67-leaderboard";
 const STORE = "runs";
 let memory = null; // fallback when IndexedDB is unavailable (some private windows): this tab only
@@ -42,8 +174,7 @@ function askPersist() {
 
 const newId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 
-/** Every run stored on this device. */
-export async function allRuns() {
+async function localAll() {
   if (memory) return [...memory];
   try {
     return (await withStore("readonly", (s) => s.getAll())) || [];
@@ -54,8 +185,7 @@ export async function allRuns() {
   }
 }
 
-/** Save one finished round; returns the stored run (with id + timestamp filled in). */
-export async function addRun(run) {
+async function localAdd(run) {
   const stored = { ...run, id: run.id || newId(), at: run.at || new Date().toISOString() };
   if (memory) { memory.push(stored); return stored; }
   askPersist();
@@ -68,38 +198,13 @@ export async function addRun(run) {
   return stored;
 }
 
-/** Merge runs from a backup file (or an older leaderboard). Runs with an existing id are skipped. */
-export async function importRuns(runs) {
-  const existing = new Set((await allRuns()).map((r) => r.id));
-  let added = 0;
-  for (const r of runs) {
-    if (!r || typeof r.name !== "string" || !Number.isFinite(+r.score)) continue;
-    if (r.id && existing.has(r.id)) continue;
-    await addRun({
-      id: r.id, name: r.name.slice(0, 14), score: +r.score, secs: +r.secs, input: r.input === "kbd" ? "kbd" : "cam",
-      rate: +r.rate || 0, peak: +r.peak || 0, rank: String(r.rank || "").slice(0, 60),
-      photo: typeof r.photo === "string" && r.photo.startsWith("data:image/") ? r.photo : null, at: r.at,
-    });
-    added++;
-  }
-  return added;
-}
-
-/** A backup file the player can keep or move to another device (photos included). */
-export async function exportBackup() {
-  const data = { app: "67-counter", version: 1, exportedAt: new Date().toISOString(), runs: await allRuns() };
-  return new Blob([JSON.stringify(data)], { type: "application/json" });
-}
-
-/** Permanently delete specific runs (e.g. every run of one player). */
-export async function deleteRuns(ids) {
+async function localDelete(ids) {
   const doomed = new Set(ids);
   if (memory) { memory = memory.filter((r) => !doomed.has(r.id)); return; }
   await withStore("readwrite", (s) => { for (const id of doomed) s.delete(id); });
 }
 
-/** Permanently wipe this device's whole leaderboard. */
-export async function clearAll() {
+async function localClear() {
   if (memory) { memory = []; return; }
   await withStore("readwrite", (s) => { s.clear(); });
 }

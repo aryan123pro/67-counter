@@ -344,6 +344,12 @@
   .polaroid { width: min(100%, 48vh); justify-self: center; background: #fff; padding: 10px 10px 34px; border: 4px solid var(--ink); transform: rotate(3deg); box-shadow: 8px 8px 0 var(--cyan); position: relative; }
   .polaroid img { display: block; width: 100%; aspect-ratio: 4/3; object-fit: cover; background: #222; }
   .gif-dl { position: absolute; top: -18px; right: -14px; transform: rotate(8deg); text-decoration: none; }
+  .consent { padding: 14px 16px; display: grid; gap: 10px; text-align: center; font-weight: 700; }
+  .consent[hidden] { display: none; }
+  .consent .cbtns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .consent .posting, .consent .done { display: none; font-family: Bungee, sans-serif; }
+  .consent[data-state="posting"] .ask, .consent[data-state="done"] .ask { display: none; }
+  .consent[data-state="posting"] .posting, .consent[data-state="done"] .done { display: block; }
   .polaroid p { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: var(--ink); font-family: Bungee, sans-serif; font-size: 14px; }
   .board { padding: 16px 18px; }
   .board h3 { font-family: Bungee, sans-serif; font-size: 18px; margin-bottom: 8px; }
@@ -403,6 +409,7 @@
     .hud-timer .t { font-size: 22px; }
     .hud-race { font-size: 10px; }
     .newrec { right: 6px; font-size: 16px; }
+    .consent { order: -1; } /* ask about the GIF right under the score on phones */
     .modes { gap: 6px; flex-wrap: nowrap; }
     .mode[data-secs] { font-size: clamp(11px, 3.3vw, 14px); padding: 6px 10px; }
     .hint { font-size: 12px; }
@@ -578,6 +585,12 @@
     <div class="side">
       <div class="polaroid" id="polaroid"><img id="snap" alt="Animated GIF of you mid-67" /><p>YOUR FASTEST 2.5s 🎞️</p>
         <a class="btn small gif-dl" id="gifDl" download="my-67.gif">⬇ GIF</a></div>
+      <div class="card consent" id="consent" data-state="ask" hidden>
+        <p class="ask">Post your GIF to the public <b>Hall of 67</b>? Your score is already up there.</p>
+        <div class="ask cbtns"><button class="btn small" id="gifYes">📤 POST IT</button><button class="btn small alt" id="gifNo">NO THANKS</button></div>
+        <p class="posting">📤 posting your GIF…</p>
+        <p class="done">✅ Your GIF is on the Hall of 67!</p>
+      </div>
       <div class="card board"><h3 id="boardTitle">🏆 HALL OF 67</h3><ol id="boardList"></ol></div>
     </div>
   </div>
@@ -600,7 +613,7 @@
 <div class="scanlines" aria-hidden="true"></div>
 
 <script type="module">
-import { allRuns, addRun } from "./leaderboard-store.js";
+import { allRuns, addRun, attachGif } from "./leaderboard-store.js";
 /* =========================================================
    67 COUNTER — camera pose tracking via MediaPipe
    ========================================================= */
@@ -641,10 +654,18 @@ function bestPerPlayer(list) {
 }
 const getBoard = () => bestPerPlayer(runs.filter((r) => String(r.secs) === secs && r.input === inputMode));
 const getRecord = () => getBoard()[0] || null;
+// Shared mode posts the score straight away (the GIF only goes up if the player taps POST IT).
+// If the shared board can't be reached, it's saved on this device instead (GIF included).
 async function saveRun(run) {
   runs.push(run); // show it straight away
-  Object.assign(run, await addRun(run));
+  const photo = run.photo;
+  const saved = await addRun(run);
+  Object.assign(run, saved);
+  if (saved.shared) run.photo = null; // not public until they agree
+  return { saved, photo };
 }
+// keep the home screen's record / announcer lines in sync with rounds played on other devices
+setInterval(() => { if (!document.hidden && $("#title").classList.contains("active")) loadRuns(); }, 20000);
 
 $("#nameInput").value = store.get("67-name", "");
 $$(".mode[data-secs]").forEach((b) => {
@@ -1747,7 +1768,14 @@ function showResults() {
     name: game.name, score, secs: +secs, input: inputMode, rate: +(score / game.dur).toFixed(2),
     peak: +game.peak.toFixed(2), rank: rankFor(score, game.dur), photo, at: new Date().toISOString(),
   };
-  if (score > 0) saveRun(entry);
+  const saving = score > 0 ? saveRun(entry) : null;
+  // shared board: ask before the GIF goes public
+  const consent = $("#consent");
+  consent.hidden = true;
+  game.lastEntry = entry; game.lastPhoto = photo;
+  if (photo && saving) saving.then(({ saved }) => {
+    if (saved.shared && game.lastEntry === entry) { consent.dataset.state = "ask"; consent.hidden = false; }
+  });
   const top = getBoard().slice(0, 10);
   const isRecord = score > 0 && (!prev || score > prev.score);
 
@@ -1948,6 +1976,20 @@ $("#homeBtn").onclick = () => { inputMode = "cam"; refreshTitle(); show("title")
 $("#quitBtn").onclick = () => { coach.stop(); game.quit = true; game.running = false; inputMode = "cam"; refreshTitle(); show("title"); };
 $("#fsBtn").onclick = $("#fsBtn2").onclick = () => (isFS() ? exitFS() : enterFS());
 syncFS();
+$("#gifYes").onclick = async () => {
+  const consent = $("#consent"), entry = game.lastEntry;
+  consent.dataset.state = "posting";
+  try {
+    Object.assign(entry, await attachGif(entry, game.lastPhoto));
+    consent.dataset.state = "done";
+    sfx.fanfare();
+  } catch (err) {
+    console.warn("GIF upload failed:", err);
+    consent.dataset.state = "ask";
+    toast("Couldn't post the GIF — try again");
+  }
+};
+$("#gifNo").onclick = () => { $("#consent").hidden = true; };
 $("#shareBtn").onclick = async () => {
   try { await navigator.clipboard.writeText(game.lastShare); toast("Copied! go flex 💅"); }
   catch { toast(game.lastShare); }

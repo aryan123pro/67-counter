@@ -1,3 +1,4 @@
 # old local-server leaderboard data (players' photos) — never commit it
 leaderboard/
 .DS_Store
+node_modules/
