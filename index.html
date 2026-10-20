@@ -352,6 +352,7 @@
   .consent .cbtns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .consent .posting, .consent .done { display: none; font-family: Bungee, sans-serif; }
   .consent .failed { display: none; }
+  .consent .done .btn { margin-top: 10px; }
   .consent[data-state="posting"] .posting, .consent[data-state="done"] .done, .consent[data-state="failed"] .failed { display: block; }
   .name-row input.missing { border-color: var(--red, #ff1f3d); box-shadow: 0 0 0 4px rgba(255, 31, 61, .35); animation: nudge .35s; }
   @keyframes nudge { 25% { translate: -6px 0; } 75% { translate: 6px 0; } }
@@ -590,7 +591,7 @@
         <a class="btn small gif-dl" id="gifDl" download="my-67.gif">⬇ GIF</a></div>
       <div class="card consent" id="consent" data-state="posting" hidden>
         <p class="posting">📤 posting your GIF to the Hall of 67…</p>
-        <p class="done">✅ Your GIF is on the Hall of 67!</p>
+        <div class="done"><p>✅ Your GIF is on the Hall of 67!</p><button class="btn small hot" id="gifShare">📤 SHARE YOUR GIF</button></div>
         <div class="failed"><p>Couldn't post your GIF.</p><button class="btn small" id="gifRetry">↻ TRY AGAIN</button></div>
       </div>
       <div class="card board"><h3 id="boardTitle">🏆 HALL OF 67</h3><ol id="boardList"></ol></div>
@@ -618,6 +619,7 @@
 <script type="module">
 import { allRuns, addRun, attachGif } from "./leaderboard-store.js";
 import { stampBrand, encodeGif, shrinkForUpload, toDataUrl, UPLOAD_BUDGET } from "./gif-tools.js";
+import { shareGif, shareUrl } from "./share.js";
 /* =========================================================
    67 COUNTER — camera pose tracking via MediaPipe
    ========================================================= */
@@ -1974,8 +1976,10 @@ $("#quitBtn").onclick = () => { coach.stop(); game.quit = true; game.running = f
 $("#fsBtn").onclick = $("#fsBtn2").onclick = () => (isFS() ? exitFS() : enterFS());
 syncFS();
 $("#gifRetry").onclick = () => postGif(game.lastEntry);
+$("#gifShare").onclick = async () => { const msg = await shareGif(game.lastEntry); if (msg) toast(msg); };
 $("#shareBtn").onclick = async () => {
-  try { await navigator.clipboard.writeText(game.lastShare); toast("Copied! go flex 💅"); }
+  const e = game.lastEntry, link = e?.photo && !String(e.photo).startsWith("data:") ? ` ${shareUrl(e)}` : "";
+  try { await navigator.clipboard.writeText(game.lastShare + link); toast("Copied! go flex 💅"); }
   catch { toast(game.lastShare); }
 };
 </script>

@@ -53,10 +53,11 @@
   .marquee span { display: inline-block; animation: marquee 22s linear infinite; }
   @keyframes marquee { to { transform: translateX(-50%); } }
 
-  main { width: min(1200px, 100%); margin: 0 auto; padding: 28px 16px 60px; display: grid; gap: 34px; }
+  main { width: min(1200px, 100%); margin: 0 auto; padding: 32px 16px 64px; display: grid; gap: 30px; }
 
   header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
-  .brand-head { display: grid; gap: 18px; justify-items: start; }
+  .brand-head { display: grid; gap: 22px; justify-items: start; }
+  .brand-head h1 { margin-bottom: 6px; }
   h1 {
     font-family: "Bungee Shade", Bungee, sans-serif; font-size: clamp(38px, min(6vw, 10vh), 84px); line-height: .9;
     color: var(--yellow); text-shadow: 5px 5px 0 var(--pink), 10px 10px 0 var(--cyan); transform: rotate(-2deg);
@@ -85,7 +86,11 @@
   @keyframes blink { 50% { opacity: .2; } }
   .confirm .backup-hint { display: block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: underline; background: none; border: 0; cursor: pointer; width: 100%; }
   .head-btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  .note { font-weight: 700; opacity: .85; margin-top: -18px; }
+  .note {
+    font-weight: 700; opacity: .9; justify-self: start; margin-top: -8px;
+    background: rgba(11, 6, 20, .55); border: 2px solid rgba(255, 248, 231, .12); border-radius: 999px; padding: 6px 14px;
+  }
+  .note.live { border-color: rgba(182, 255, 0, .35); }
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(140px); z-index: 30;
     background: var(--lime); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px;
@@ -112,7 +117,8 @@
   h2 small { font-size: .5em; color: var(--cyan); text-shadow: none; margin-left: 8px; }
 
   /* podium: compact, centred */
-  .board-wrap { width: min(780px, 100%); margin: 0 auto; display: grid; gap: 18px; }
+  .board-wrap { width: min(780px, 100%); margin: 14px auto 0; display: grid; gap: 22px; }
+  .board-wrap h2 { margin-bottom: 18px; }
   .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(10px, 2.5vw, 22px); align-items: end; }
   .spot { text-align: center; cursor: pointer; background: none; border: 0; color: inherit; display: grid; justify-items: center; }
   .spot .medal { font-size: clamp(24px, 3.4vw, 36px); line-height: 1; margin-bottom: 6px; }
@@ -197,7 +203,8 @@
   .shot .cap { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-family: Bungee, sans-serif; font-size: 13px; }
   .shot .cap b { color: var(--pink); font-size: 22px; }
   .shot .dl { position: absolute; top: -12px; right: -10px; font-size: 12px; padding: 4px 9px; box-shadow: 3px 3px 0 var(--ink); transform: rotate(6deg); }
-  .shot .dl:disabled { opacity: .6; cursor: wait; }
+  .shot .dl:disabled, .shot .sh:disabled { opacity: .6; cursor: wait; }
+  .shot .sh { position: absolute; top: -12px; left: -10px; font-size: 12px; padding: 4px 9px; box-shadow: 3px 3px 0 var(--ink); transform: rotate(-6deg); background: var(--pink); color: #fff; }
   .history { width: 100%; border-collapse: collapse; font-weight: 700; font-size: 14px; }
   .history th { font-family: Bungee, sans-serif; font-size: 13px; text-align: left; border-bottom: 3px solid var(--ink); padding: 6px; }
   .history td { padding: 6px; border-bottom: 2px dashed rgba(11,6,20,.25); }
@@ -240,6 +247,7 @@
 
 <script type="module">
 import { allRuns, isShared } from "./leaderboard-store.js";
+import { shareGif } from "./share.js";
 // Inside the game (embedded layer): PLAY / GO 67 just close the layer, keeping fullscreen.
 // Opened directly: go fullscreen on the first tap (browsers need a tap before allowing it).
 const embedded = new URLSearchParams(location.search).has("embed") && window.parent !== window;
@@ -397,7 +405,10 @@ function openProfile(k) {
     const dl = el("button", "btn dl", "⬇ GIF");
     dl.title = `Download ${p.name}'s ${r.score} GIF`;
     dl.addEventListener("click", () => downloadGif(r.photo, `${p.name}-${r.score}-67s`, dl));
-    s.append(photo(r.photo, "", `${p.name} scoring ${r.score}`), cap, dl);
+    const sh = el("button", "btn sh", "📤 SHARE");
+    sh.title = `Share ${p.name}'s ${r.score} GIF`;
+    sh.addEventListener("click", async () => { sh.disabled = true; const msg = await shareGif(r); sh.disabled = false; if (msg) toast(msg); });
+    s.append(photo(r.photo, "", `${p.name} scoring ${r.score}`), cap, dl, sh);
     wall.append(s);
   }
   wallSec.append(wall);
