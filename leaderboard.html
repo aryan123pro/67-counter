@@ -190,6 +190,8 @@
   .shot img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: #2a1b40; }
   .shot .cap { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-family: Bungee, sans-serif; font-size: 13px; }
   .shot .cap b { color: var(--pink); font-size: 22px; }
+  .shot .dl { position: absolute; top: -12px; right: -10px; font-size: 12px; padding: 4px 9px; box-shadow: 3px 3px 0 var(--ink); transform: rotate(6deg); }
+  .shot .dl:disabled { opacity: .6; cursor: wait; }
   .history { width: 100%; border-collapse: collapse; font-weight: 700; font-size: 14px; }
   .history th { font-family: Bungee, sans-serif; font-size: 13px; text-align: left; border-bottom: 3px solid var(--ink); padding: 6px; }
   .history td { padding: 6px; border-bottom: 2px dashed rgba(11,6,20,.25); }
@@ -450,7 +452,10 @@ function openProfile(k) {
     const s = el("div", "shot");
     const cap = el("div", "cap");
     cap.append(el("span", null, `${r.secs}s · ${when(r.at)}`), el("b", null, r.score));
-    s.append(photo(r.photo, "", `${p.name} scoring ${r.score}`), cap);
+    const dl = el("button", "btn dl", "⬇ GIF");
+    dl.title = `Download ${p.name}'s ${r.score} GIF`;
+    dl.addEventListener("click", () => downloadGif(r.photo, `${p.name}-${r.score}-67s`, dl));
+    s.append(photo(r.photo, "", `${p.name} scoring ${r.score}`), cap, dl);
     wall.append(s);
   }
   wallSec.append(wall);
@@ -514,6 +519,25 @@ $("#adminForm").addEventListener("submit", async (e) => {
   $("#adminDlg").close(); applyMode(); render();
   toast("Admin mode on — you can delete now");
 });
+
+// Save any player's clip to the device (works for shared-board URLs and on-device data URLs)
+async function downloadGif(src, baseName, btn) {
+  btn.disabled = true;
+  try {
+    const blob = await (await fetch(src)).blob();
+    const ext = blob.type === "image/jpeg" ? "jpg" : "gif";
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: url, download: `${baseName.replace(/[^\w-]+/g, "_")}.${ext}` });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast("GIF saved ⬇");
+  } catch (err) {
+    console.warn("GIF download failed:", err);
+    toast("Couldn't download that GIF");
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 let toastTimer;
 function toast(msg) {
