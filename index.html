@@ -3,12 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>67 Counter</title>
+<title>67 Counter · Taqneeq 19.0</title>
+<link rel="icon" href="favicon.ico" />
 <meta name="description" content="How many 6-7s can you do? Camera-powered 67 counter with a record to break." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Josefin+Sans:wght@300;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
+  /* Taqneeq 19.0 branding (their colours + Josefin Sans, from the Taqneeq site) */
+  .tq-badge {
+    display: inline-flex; align-items: center; gap: 8px; align-self: center; justify-self: start;
+    background: #1e1f26; color: #03dac6; border: 2px solid #03dac6; border-radius: 999px; padding: 3px 14px 3px 4px;
+    font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: clamp(11px, min(1.1vw, 1.8vh), 15px);
+    letter-spacing: .3em; line-height: 1; white-space: nowrap; box-shadow: 0 0 18px rgba(3, 218, 198, .35);
+  }
+  .tq-badge img { width: 1.9em; height: 1.9em; border-radius: 50%; background: #fff; padding: 2px; }
+  .tq-badge small { color: #faebd7; font-weight: 300; font-size: .78em; letter-spacing: .25em; }
   :root {
     --pink: #ff2bd6;
     --lime: #b6ff00;
@@ -411,7 +421,7 @@
     .newrec { right: 6px; font-size: 16px; }
     .consent { order: -1; } /* ask about the GIF right under the score on phones */
     .modes { gap: 6px; flex-wrap: nowrap; }
-    .mode[data-secs] { font-size: clamp(11px, 3.3vw, 14px); padding: 6px 10px; }
+    .mode[data-secs] { font-size: clamp(10px, 2.9vw, 14px); padding: 6px 9px; white-space: nowrap; }
     .hint { font-size: 12px; }
     /* home: mascot on its own row (speech bubble beside it), then logo + record badge */
     .title-row { display: grid; grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: 12px; row-gap: 0; }
@@ -477,6 +487,7 @@
 
 <!-- ============ TITLE ============ -->
 <section class="screen active" id="title">
+  <div class="tq-badge"><img src="favicon.ico" alt="" width="22" height="22" /><span>TAQNEEQ 19.0</span><small>PRESENTS</small></div>
   <div class="title-row">
     <div class="title-mascot" data-mascot="dance"><div class="bubble" id="bubble" role="status" aria-live="polite"><span class="bubble-tag">🎤 MC 67</span><p id="bubbleText"></p></div></div>
     <div class="logo">67</div>
@@ -598,6 +609,7 @@
 
 <div id="intro" role="button" tabindex="0" aria-label="Enter the game">
   <div class="intro-mascot" data-mascot="frenzy"></div>
+  <div class="tq-badge"><img src="favicon.ico" alt="" width="22" height="22" /><span>TAQNEEQ 19.0</span><small>PRESENTS</small></div>
   <div class="intro-big">TAP ANYWHERE<br>TO ENTER</div>
   <div class="intro-sub">FULLSCREEN + MUSIC 🎵 + 67s 🫴🫴</div>
 </div>
@@ -622,7 +634,7 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-$("#marqueeText").textContent = "SIX SEVEN ✦ 67 ✦ SIX SEVEN ✦ 🫴🫴 ✦ BREAK THE RECORD ✦ ".repeat(8);
+$("#marqueeText").textContent = "TAQNEEQ 19.0 ✦ SIX SEVEN ✦ 67 ✦ 🫴🫴 ✦ BREAK THE RECORD ✦ ".repeat(8);
 
 /* ---------- storage (best effort) ---------- */
 const store = {
@@ -1517,7 +1529,7 @@ function recordClip(now, info) {
   x.font = "44px Bungee, sans-serif"; x.lineWidth = 8; x.strokeStyle = "#0b0614";
   x.strokeText(String(game.count), w - 10, h - 12); x.fillStyle = "#ffe600"; x.fillText(String(game.count), w - 10, h - 12);
   x.textAlign = "left"; x.font = "14px Bungee, sans-serif"; x.lineWidth = 4;
-  x.strokeText("67 COUNTER", 8, 20); x.fillStyle = "#ff2bd6"; x.fillText("67 COUNTER", 8, 20);
+  x.strokeText("TAQNEEQ 19.0", 8, 20); x.fillStyle = "#03dac6"; x.fillText("TAQNEEQ 19.0", 8, 20);
   clip.frames.push(c);
   if (clip.frames.length > CLIP.frames) clip.frames.shift();
   const sp = speedNow();
@@ -1878,7 +1890,7 @@ function showResults() {
     const sc = document.createElement("span"); sc.className = "sc"; sc.textContent = e.score;
     li.append(pos, nm, sc); ol.append(li);
   });
-  game.lastShare = `I just hit ${score} six-sevens in ${secs}s 🫴🫴 Rank: ${rankFor(score, game.dur)}${isRecord ? " — NEW RECORD 👑" : ""}. Beat that.`;
+  game.lastShare = `I just hit ${score} six-sevens in ${secs}s at Taqneeq 19.0 🫴🫴 Rank: ${rankFor(score, game.dur)}${isRecord ? " — NEW RECORD 👑" : ""}. Beat that.`;
 }
 
 /* ---------- confetti ---------- */
@@ -1927,6 +1939,7 @@ const announcer = {
   lines() {
     const rec = getRecord();
     return [
+      "Welcome to Taqneeq 19.0!",
       "Who's got the fastest hands in the room?",
       rec ? `${rec.name} holds the record with ${rec.score}. Come take it!` : "No record yet. Be the first legend!",
       "Palms up, both hands, let's go!",

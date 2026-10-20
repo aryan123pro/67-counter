@@ -3,12 +3,22 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Hall of 67</title>
+<title>Hall of 67 · Taqneeq 19.0</title>
+<link rel="icon" href="favicon.ico" />
 <meta name="description" content="Leaderboard and player profiles for the 67 Counter." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Josefin+Sans:wght@300;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
+  /* Taqneeq 19.0 branding (their colours + Josefin Sans, from the Taqneeq site) */
+  .tq-badge {
+    display: inline-flex; align-items: center; gap: 8px; align-self: center; justify-self: start;
+    background: #1e1f26; color: #03dac6; border: 2px solid #03dac6; border-radius: 999px; padding: 3px 14px 3px 4px;
+    font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: clamp(11px, min(1.1vw, 1.8vh), 15px);
+    letter-spacing: .3em; line-height: 1; white-space: nowrap; box-shadow: 0 0 18px rgba(3, 218, 198, .35);
+  }
+  .tq-badge img { width: 1.9em; height: 1.9em; border-radius: 50%; background: #fff; padding: 2px; }
+  .tq-badge small { color: #faebd7; font-weight: 300; font-size: .78em; letter-spacing: .25em; }
   :root {
     --pink: #ff2bd6; --lime: #b6ff00; --cyan: #00e5ff; --yellow: #ffe600; --orange: #ff7a00; --red: #ff1f3d;
     --ink: #0b0614; --paper: #fff8e7; --bg: #12021f;
@@ -41,6 +51,7 @@
   main { width: min(1200px, 100%); margin: 0 auto; padding: 28px 16px 60px; display: grid; gap: 34px; }
 
   header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .brand-head { display: grid; gap: 12px; justify-items: start; }
   h1 {
     font-family: "Bungee Shade", Bungee, sans-serif; font-size: clamp(38px, min(6vw, 10vh), 84px); line-height: .9;
     color: var(--yellow); text-shadow: 5px 5px 0 var(--pink), 10px 10px 0 var(--cyan); transform: rotate(-2deg);
@@ -215,7 +226,7 @@
 <div class="marquee" aria-hidden="true"><span id="marquee"></span></div>
 <main>
   <header>
-    <h1>HALL OF 67</h1>
+    <div class="brand-head"><div class="tq-badge"><img src="favicon.ico" alt="" width="22" height="22" /><span>TAQNEEQ 19.0</span><small>PRESENTS</small></div><h1>HALL OF 67</h1></div>
     <div class="head-btns">
       <button class="btn alt" id="backupBtn" title="Download this device's leaderboard (with photos) as a file">⬇ BACKUP</button>
       <button class="btn alt" id="adminBtn" hidden title="Unlock deleting on the shared leaderboard">🔑 ADMIN</button>
@@ -293,7 +304,7 @@ if (embedded) {
 }
 const $ = (s, el = document) => el.querySelector(s);
 const MODES = { 15: "15s SPRINT", 30: "30s CLASSIC", 60: "60s MARATHON" };
-$("#marquee").textContent = "HALL OF 67 ✦ SIX SEVEN ✦ 👑 ✦ WHO HAS THE FASTEST HANDS ✦ 🫴🫴 ✦ ".repeat(8);
+$("#marquee").textContent = "TAQNEEQ 19.0 ✦ HALL OF 67 ✦ SIX SEVEN ✦ 👑 ✦ WHO HAS THE FASTEST HANDS ✦ 🫴🫴 ✦ ".repeat(8);
 
 let runs = await allRuns();
 // shared board: everyone sees it, but only the admin (password from Vercel's ADMIN_KEY) can delete

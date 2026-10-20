@@ -1,4 +1,4 @@
-# 67 Counter
+# 67 Counter · Taqneeq 19.0
 
 How many 6-7s can you do? A camera game: palms up, pump your hands up and down in turns, and every time
 your palms swap places is one rep. Hype-man voice, live coach, music, highlight GIFs, and a shared
