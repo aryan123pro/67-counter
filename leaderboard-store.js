@@ -81,11 +81,14 @@ export async function addRun(run) {
   return { ...(await localAdd(run)), shared: false };
 }
 
-/** Shared mode: upload the round's GIF after the player agrees to post it. */
-export async function attachGif(run, dataUrl) {
+/** Shared mode: upload the round's (Taqneeq-branded) GIF after the player agrees to post it.
+    With { admin: true } it uses the admin password instead of the round's edit key (re-brand tool). */
+export async function attachGif(run, dataUrl, { admin = false } = {}) {
+  const headers = { "Content-Type": "application/json" };
+  if (admin) headers["x-admin-key"] = getAdminKey();
   const data = await fetchJson(`${API}?id=${encodeURIComponent(run.id)}`, {
-    method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ editKey: run.editKey, gif: dataUrl }),
-  }, 20000);
+    method: "PATCH", headers, body: JSON.stringify({ editKey: run.editKey, gif: dataUrl, branded: true }),
+  }, 30000);
   const i = lastShared.findIndex((r) => r.id === run.id);
   if (i >= 0) lastShared[i] = data.run;
   return data.run;

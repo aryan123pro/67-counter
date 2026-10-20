@@ -235,6 +235,7 @@
     <div class="head-btns">
       <button class="btn alt" id="backupBtn" title="Download this device's leaderboard (with photos) as a file">⬇ BACKUP</button>
       <button class="btn alt" id="adminBtn" hidden title="Unlock deleting on the shared leaderboard">🔑 ADMIN</button>
+      <button class="btn" id="rebrandBtn" hidden title="Add the Taqneeq 19.0 stamp to GIFs posted before the branding existed">🎨 RE-BRAND OLD GIFS</button>
       <label class="btn alt" id="restoreLabel" title="Load a backup file into this device's leaderboard">⬆ RESTORE<input type="file" id="restoreInput" accept="application/json,.json" hidden /></label>
       <button class="btn danger" id="clearAllBtn" title="Delete every score and GIF on this device">🗑 CLEAR ALL</button>
       <a class="btn" href="./">▶ PLAY</a>
@@ -286,7 +287,8 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { allRuns, importRuns, exportBackup, deleteRuns, clearAll, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin } from "./leaderboard-store.js";
+import { allRuns, importRuns, exportBackup, deleteRuns, clearAll, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, attachGif } from "./leaderboard-store.js";
+import { rebrandGif, canRebrand } from "./gif-tools.js";
 // Inside the game (embedded layer): PLAY / GO 67 just close the layer, keeping fullscreen.
 // Opened directly: go fullscreen on the first tap (browsers need a tap before allowing it).
 const embedded = new URLSearchParams(location.search).has("embed") && window.parent !== window;
@@ -325,6 +327,14 @@ function applyMode() {
   $("#clearAllBtn").hidden = !canDelete();
   $("#adminBtn").hidden = !(sharedMode && isAdminEnabled());
   $("#adminBtn").textContent = admin ? "🔓 ADMIN ON" : "🔑 ADMIN";
+  updateRebrand();
+}
+// admin: GIFs posted before the Taqneeq stamp existed
+const unbranded = () => runs.filter((r) => r.photo && !r.branded);
+function updateRebrand() {
+  const n = sharedMode && admin ? unbranded().length : 0;
+  $("#rebrandBtn").hidden = !n;
+  if (n && !$("#rebrandBtn").disabled) $("#rebrandBtn").textContent = `🎨 RE-BRAND ${n} OLD GIF${n === 1 ? "" : "S"}`;
 }
 applyMode();
 let view = { secs: 30, input: "cam" };
@@ -370,6 +380,7 @@ function players() {
 }
 
 function render() {
+  updateRebrand();
   try { localStorage.setItem("67-lb-view", JSON.stringify(view)); } catch {}
   document.querySelectorAll(".chip[data-secs]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.secs === +view.secs)));
   document.querySelectorAll(".chip[data-input]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.input === view.input)));
@@ -561,9 +572,10 @@ function toast(msg) {
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
 }
 // styled yes/no instead of window.confirm(); resolves true only on DELETE
-function ask(title, msg, { offerBackup = false } = {}) {
+function ask(title, msg, { offerBackup = false, yes = "DELETE" } = {}) {
   const dlg = $("#confirm");
   $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cBackup").hidden = !offerBackup;
+  $("#cYes").textContent = yes;
   dlg.showModal();
   $("#cNo").focus();
   return new Promise((resolve) => {
@@ -574,6 +586,25 @@ function ask(title, msg, { offerBackup = false } = {}) {
   });
 }
 $("#cBackup").addEventListener("click", () => downloadBackup());
+
+// Re-brand: stamp every frame of each old GIF with the Taqneeq 19.0 branding and replace it on the board
+$("#rebrandBtn").addEventListener("click", async () => {
+  const todo = unbranded();
+  if (!todo.length) return;
+  if (!canRebrand()) return toast("Open this page in Chrome or Edge to re-brand GIFs");
+  if (!(await ask(`Re-brand ${todo.length} GIF${todo.length === 1 ? "" : "s"}?`, "Adds the Taqneeq 19.0 stamp (logo + name) to every frame and replaces the GIF on the shared leaderboard.", { yes: "RE-BRAND" }))) return;
+  const btn = $("#rebrandBtn");
+  btn.disabled = true;
+  let ok = 0, failed = 0;
+  for (const [i, r] of todo.entries()) {
+    btn.textContent = `🎨 RE-BRANDING ${i + 1}/${todo.length}…`;
+    try { await attachGif(r, await rebrandGif(r.photo), { admin: true }); ok++; }
+    catch (err) { console.warn("re-brand failed for", r.id, err); failed++; }
+  }
+  btn.disabled = false;
+  runs = await allRuns(); render();
+  toast(failed ? `Re-branded ${ok}, ${failed} failed — try again` : `Re-branded ${ok} GIF${ok === 1 ? "" : "s"} 🎨`);
+});
 $("#clearAllBtn").addEventListener("click", async () => {
   if (!runs.length) return toast("Leaderboard is already empty");
   const people = new Set(runs.map((r) => r.name.toLowerCase())).size;

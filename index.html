@@ -642,6 +642,7 @@
 
 <script type="module">
 import { allRuns, addRun, attachGif } from "./leaderboard-store.js";
+import { stampBrand, encodeGif, shrinkForUpload, toDataUrl, UPLOAD_BUDGET } from "./gif-tools.js";
 /* =========================================================
    67 COUNTER — camera pose tracking via MediaPipe
    ========================================================= */
@@ -1521,26 +1522,6 @@ function addCount(x, y) {
    GIF (with your 6/7 stickers and live count drawn on) that goes on the results + leaderboard. */
 const CLIP = { w: 288, h: 216, every: 125, frames: 20 };
 function newClip() { return { frames: [], best: null, bestSpeed: -1, lastAt: 0 }; }
-// Taqneeq 19.0 branding baked into every GIF frame, so the full GIF, the shrunken upload copy
-// and every download all carry it: TQ logo + "TAQNEEQ 19.0" + "NMIMS MPSTME TECH FEST".
-const tqLogo = new Image(); tqLogo.src = "taqneeq-logo.jpg";
-function stampBrand(x) {
-  x.save();
-  x.textAlign = "left"; x.textBaseline = "alphabetic";
-  x.font = "15px Bungee, sans-serif";
-  const w1 = x.measureText("TAQNEEQ 19.0").width;
-  x.font = "600 8.5px 'Josefin Sans', sans-serif";
-  const w2 = x.measureText("NMIMS MPSTME TECH FEST").width;
-  const bw = 50 + Math.max(w1, w2) + 9;
-  x.fillStyle = "rgba(18, 2, 31, .8)"; x.strokeStyle = "#ffc21a"; x.lineWidth = 2;
-  x.beginPath();
-  if (x.roundRect) x.roundRect(5, 5, bw, 44, 10); else x.rect(5, 5, bw, 44);
-  x.fill(); x.stroke();
-  if (tqLogo.complete && tqLogo.naturalWidth) x.drawImage(tqLogo, 9, 9, 36, 36);
-  x.font = "15px Bungee, sans-serif"; x.fillStyle = "#ffc21a"; x.fillText("TAQNEEQ 19.0", 50, 27);
-  x.font = "600 8.5px 'Josefin Sans', sans-serif"; x.fillStyle = "#faebd7"; x.fillText("NMIMS MPSTME TECH FEST", 50, 40);
-  x.restore();
-}
 function recordClip(now, info) {
   const clip = game.clip;
   const vw = video.videoWidth, vh = video.videoHeight;
@@ -1570,31 +1551,13 @@ function recordClip(now, info) {
   const sp = speedNow();
   if (clip.frames.length === CLIP.frames && sp >= clip.bestSpeed) { clip.best = clip.frames.slice(); clip.bestSpeed = sp; }
 }
-// Encode clip frames into a GIF, optionally smaller (w×h), with fewer colours, or skipping frames (step).
-async function encodeGif(frames, { w = CLIP.w, h = CLIP.h, colors = 256, step = 1 } = {}) {
-  const { GIFEncoder, quantize, applyPalette } = await import("https://cdn.jsdelivr.net/npm/gifenc@1.0.3/dist/gifenc.esm.js");
-  const gif = GIFEncoder();
-  const c = document.createElement("canvas"); c.width = w; c.height = h;
-  const x = c.getContext("2d", { willReadFrequently: true });
-  for (let i = 0; i < frames.length; i += step) {
-    x.drawImage(frames[i], 0, 0, w, h);
-    const { data } = x.getImageData(0, 0, w, h);
-    const palette = quantize(data, colors);
-    gif.writeFrame(applyPalette(data, palette), w, h, { palette, delay: CLIP.every * step });
-    await new Promise(requestAnimationFrame); // keep the page animating while we encode
-  }
-  gif.finish();
-  return new Blob([gif.bytes()], { type: "image/gif" });
-}
-const toDataUrl = (blob) => new Promise((resolve) => { const fr = new FileReader(); fr.onload = () => resolve(fr.result); fr.readAsDataURL(blob); });
-
 // Full-quality GIF for the results screen / download.
 async function buildGif() {
   const frames = game.clip?.best || game.clip?.frames;
   if (!frames?.length) return;
   game.gifFrames = frames;
   try {
-    game.gifBlob = await encodeGif(frames);
+    game.gifBlob = await encodeGif(frames, { delay: CLIP.every });
     game.gifUrl = await toDataUrl(game.gifBlob);
   } catch (err) {
     console.warn("GIF encoding failed, keeping a still photo instead:", err);
@@ -1603,24 +1566,11 @@ async function buildGif() {
   }
 }
 
-// Real camera footage is grainy and makes big GIFs, so the copy that gets posted online is
-// shrunk step by step until it fits the upload limit (the download keeps full quality).
-const UPLOAD_BUDGET = 550 * 1024;
-const UPLOAD_LEVELS = [
-  { w: 240, h: 180, colors: 128 },
-  { w: 208, h: 156, colors: 64 },
-  { w: 208, h: 156, colors: 64, step: 2 },
-  { w: 176, h: 132, colors: 32, step: 2 },
-];
+// The copy posted online is shrunk until it fits the upload limit (the download keeps full quality).
 async function gifForUpload() {
   if (game.gifBlob && game.gifBlob.size <= UPLOAD_BUDGET) return game.gifUrl;
   if (!game.gifFrames) return game.gifUrl; // a still JPEG fallback is already small
-  let blob;
-  for (const level of UPLOAD_LEVELS) {
-    blob = await encodeGif(game.gifFrames, level);
-    if (blob.size <= UPLOAD_BUDGET) break;
-  }
-  return toDataUrl(blob);
+  return toDataUrl(await shrinkForUpload(game.gifFrames, CLIP.every));
 }
 
 let hypeTimer;

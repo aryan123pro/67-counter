@@ -3,7 +3,8 @@
    GET    /api/runs                 → { shared, adminEnabled, runs }   (cached a few seconds at the edge)
    GET    /api/runs?admin=1         → same, plus { admin } — send the admin password in the x-admin-key header
    POST   /api/runs                 → save a finished round (no GIF yet) → { run, editKey }
-   PATCH  /api/runs?id=<id>         → attach the round's GIF once the player taps "post it" (needs that round's editKey)
+   PATCH  /api/runs?id=<id>         → attach the round's GIF once the player taps "post it" (needs that round's editKey,
+                                      or the admin password — used by the leaderboard's "re-brand old GIFs" tool)
    DELETE /api/runs?ids=a,b | ?all=1 → admin only: delete players' rounds or wipe the board
 
    Admin password: set ADMIN_KEY in Vercel → Settings → Environment Variables. Without it, nothing can be deleted. */
@@ -26,7 +27,9 @@ const isAdmin = (req) => Boolean(process.env.ADMIN_KEY && req.headers["x-admin-k
 // what everyone gets to see (never the edit key)
 const publicRun = (r) => ({
   id: r.id, name: r.name, score: r.score, secs: r.secs, input: r.input, rate: r.rate, peak: r.peak, rank: r.rank, at: r.at,
-  photo: r.hasGif ? `/api/gif?id=${r.id}` : null,
+  // ?v= changes whenever the GIF is replaced, so the long CDN cache never serves an old copy
+  photo: r.hasGif ? `/api/gif?id=${r.id}&v=${r.gifV || 1}` : null,
+  branded: Boolean(r.gifBranded), // GIF carries the Taqneeq 19.0 stamp
 });
 
 // "data:image/gif;base64,..." → "gif:<base64>" (or null if it isn't a reasonable GIF/JPEG)
@@ -77,11 +80,13 @@ export default async function handler(req, res) {
       const b = body(req);
       const run = await db.getRun(id);
       if (!run) return res.status(404).json({ error: "no such round" });
-      if (!b.editKey || !sameSecret(run.editKey, b.editKey)) return res.status(403).json({ error: "not your round" });
+      if (!isAdmin(req) && (!b.editKey || !sameSecret(run.editKey, b.editKey))) return res.status(403).json({ error: "not your round" });
       const clip = parseClip(b.gif);
       if (!clip) return res.status(400).json({ error: String(b.gif || "").length > 100 ? "GIF too big" : "GIF missing" });
       await db.putGif(id, clip);
       run.hasGif = true;
+      run.gifBranded = b.branded === true;
+      run.gifV = (run.gifV || 0) + 1;
       await db.putRun(run);
       return res.status(200).json({ run: publicRun(run) });
     }
