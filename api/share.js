@@ -25,18 +25,18 @@ ${image ? `<meta property="og:image" content="${esc(origin + image)}" />
 <link rel="icon" type="image/png" href="/tq-icon-64.png" />
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Josefin+Sans:wght@600&family=Space+Mono:wght@700&display=swap" rel="stylesheet" />
 <style>
-  :root { --pink: #ff2bd6; --lime: #b6ff00; --cyan: #00e5ff; --yellow: #ffe600; --gold: #ffc21a; --ink: #0b0614; --paper: #fff8e7; --bg: #12021f; }
+  :root { --pink: #9000ff; --lime: #ffd000; --cyan: #d9a6ff; --yellow: #ffd000; --gold: #ffd000; --ink: #16002e; --paper: #f6ecff; --bg: #1e003d; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { min-height: 100vh; background: radial-gradient(circle at 50% 20%, #3a0b57, var(--bg) 65%); color: var(--paper); font-family: "Space Mono", monospace; display: grid; place-items: center; padding: 24px 16px; }
+  body { min-height: 100vh; background: radial-gradient(circle at 50% 20%, #4a0090, var(--bg) 65%); color: var(--paper); font-family: "Space Mono", monospace; display: grid; place-items: center; padding: 24px 16px; }
   main { width: min(520px, 100%); display: grid; gap: 18px; justify-items: center; text-align: center; }
-  .brand { display: inline-flex; align-items: center; gap: 10px; border: 3px solid var(--gold); border-radius: 16px; padding: 5px 14px 5px 5px; background: rgba(18, 2, 31, .7); }
+  .brand { display: inline-flex; align-items: center; gap: 10px; border: 3px solid var(--gold); border-radius: 16px; padding: 5px 14px 5px 5px; background: rgba(30, 0, 61, .7); }
   .brand img { width: 42px; height: 42px; border-radius: 10px; }
   .brand b { font-family: Bungee, sans-serif; color: var(--gold); font-size: 18px; line-height: 1; display: block; text-align: left; }
   .brand span { font-family: "Josefin Sans", sans-serif; font-size: 10px; letter-spacing: .25em; display: block; margin-top: 4px; }
   h1 { font-family: Bungee, sans-serif; font-size: clamp(26px, 7vw, 40px); line-height: 1.05; }
   h1 em { font-style: normal; color: var(--yellow); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--pink); font-size: 1.4em; display: block; }
   .gif { width: 100%; background: #fff; padding: 10px 10px 12px; border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--cyan); transform: rotate(-1.5deg); }
-  .gif img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #2a1b40; }
+  .gif img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: #2e0059; }
   .btns { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .btn { font-family: Bungee, sans-serif; font-size: 16px; text-decoration: none; color: var(--ink); background: var(--lime); border: 3px solid var(--ink); border-radius: 14px; padding: 11px 18px; box-shadow: 5px 5px 0 var(--ink); cursor: pointer; }
   .btn.alt { background: var(--cyan); }

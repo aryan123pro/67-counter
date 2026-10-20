@@ -14,25 +14,25 @@
   /* Taqneeq 19.0 branding: the organisation's gold-on-purple TQ logo + a gold wordmark */
   .tq-brand {
     display: inline-flex; align-items: center; gap: clamp(8px, 1.4vh, 14px); align-self: center;
-    background: rgba(18, 2, 31, .72); border: 3px solid #ffc21a; border-radius: 20px;
-    padding: 6px 18px 6px 6px; box-shadow: 0 0 26px rgba(255, 194, 26, .35), 5px 5px 0 #0b0614; text-align: left;
+    background: rgba(30, 0, 61, .72); border: 3px solid #ffd000; border-radius: 20px;
+    padding: 6px 18px 6px 6px; box-shadow: 0 0 26px rgba(255, 208, 0, .35), 5px 5px 0 #16002e; text-align: left;
   }
-  .tq-logo { width: clamp(44px, 8vh, 88px); aspect-ratio: 1; border-radius: 14px; object-fit: cover; display: block; border: 2px solid #ffc21a; }
-  .tq-text b { display: block; font-family: Bungee, sans-serif; font-weight: 400; font-size: clamp(18px, 3.4vh, 34px); line-height: 1; color: #ffc21a; text-shadow: 3px 3px 0 #0b0614; white-space: nowrap; }
-  .tq-text span { display: block; margin-top: 5px; font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: clamp(9px, 1.45vh, 14px); letter-spacing: .28em; color: #faebd7; white-space: nowrap; }
+  .tq-logo { width: clamp(44px, 8vh, 88px); aspect-ratio: 1; border-radius: 14px; object-fit: cover; display: block; border: 2px solid #ffd000; }
+  .tq-text b { display: block; font-family: Bungee, sans-serif; font-weight: 400; font-size: clamp(18px, 3.4vh, 34px); line-height: 1; color: #ffd000; text-shadow: 3px 3px 0 #16002e; white-space: nowrap; }
+  .tq-text span { display: block; margin-top: 5px; font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: clamp(9px, 1.45vh, 14px); letter-spacing: .28em; color: #f6ecff; white-space: nowrap; }
   /* the big version (intro screen) */
   .tq-brand.big { flex-direction: column; gap: 10px; padding: 14px 26px 12px; text-align: center; }
   .tq-brand.big .tq-logo { width: clamp(80px, 15vh, 160px); border-radius: 24px; }
   .tq-brand.big .tq-text b { font-size: clamp(24px, 5vh, 52px); }
   :root {
-    --pink: #ff2bd6;
-    --lime: #b6ff00;
-    --cyan: #00e5ff;
-    --yellow: #ffe600;
-    --orange: #ff7a00;
-    --ink: #0b0614;
-    --paper: #fff8e7;
-    --bg: #12021f;
+    --pink: #9000ff;
+    --lime: #ffd000;
+    --cyan: #d9a6ff;
+    --yellow: #ffd000;
+    --orange: #e0a800;
+    --ink: #16002e;
+    --paper: #f6ecff;
+    --bg: #1e003d;
     --hue: 0deg;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -47,18 +47,18 @@
   }
   button { font: inherit; cursor: pointer; }
 
-  /* ---------- psychedelic backdrop ---------- */
+  /* ---------- backdrop: peacock arch artwork (same as the leaderboard) ---------- */
   .backdrop {
-    position: fixed; inset: -50%;
-    background:
-      repeating-conic-gradient(from 0deg, #2a0640 0deg 10deg, #170228 10deg 20deg);
-    animation: spin 40s linear infinite;
-    filter: hue-rotate(var(--hue));
+    position: fixed; inset: 0;
+    background: #1e003d url("bg-leaderboard.jpg") center / cover no-repeat;
     z-index: 0;
   }
   .backdrop::after {
     content: ""; position: absolute; inset: 0;
-    background: radial-gradient(circle at 50% 50%, transparent 0 15%, rgba(18,2,31,.85) 55%);
+    /* darken toward the middle where the logo, name box and START sit, so they stay readable */
+    background:
+      radial-gradient(ellipse at 50% 52%, rgba(22, 0, 46, .62) 0 32%, rgba(22, 0, 46, .38) 75%),
+      linear-gradient(180deg, rgba(22, 0, 46, .25), rgba(22, 0, 46, .55));
   }
   .scanlines {
     position: fixed; inset: 0; pointer-events: none; z-index: 50;
@@ -210,7 +210,7 @@
   }
   #overlay, #fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
   .vignette { position: absolute; inset: 0; pointer-events: none;
-    box-shadow: inset 0 0 120px 30px rgba(255,43,214,.45), inset 0 0 0 8px var(--ink); }
+    box-shadow: inset 0 0 120px 30px rgba(144, 0, 255,.45), inset 0 0 0 8px var(--ink); }
   .flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   .flash.on { animation: flash .18s ease-out; }
   @keyframes flash { from { opacity: .35; } to { opacity: 0; } }
@@ -230,17 +230,17 @@
   .meter { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-family: Bungee, sans-serif; font-size: 13px; }
   .meter > span { background: var(--ink); padding: 2px 8px; border-radius: 8px; }
   .meter > span:first-child { color: var(--cyan); } .meter > span:last-child { color: var(--pink); }
-  .meter-track { position: relative; width: min(320px, 50vw); height: 24px; border: 3px solid var(--paper); border-radius: 999px; background: rgba(11,6,20,.75); overflow: hidden; }
-  .meter-track::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(255,248,231,.35); }
+  .meter-track { position: relative; width: min(320px, 50vw); height: 24px; border: 3px solid var(--paper); border-radius: 999px; background: rgba(22, 0, 46,.75); overflow: hidden; }
+  .meter-track::after { content: ""; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: rgba(246, 236, 255,.35); }
   .zone { position: absolute; top: 0; bottom: 0; width: 25%; background: rgba(255,255,255,.12); transition: background .1s; }
   .zone.zl { left: 0; border-right: 3px dashed var(--cyan); } .zone.zr { right: 0; border-left: 3px dashed var(--pink); }
-  .zone.zl.hit { background: rgba(0,229,255,.6); } .zone.zr.hit { background: rgba(255,43,214,.6); }
+  .zone.zl.hit { background: rgba(217, 166, 255,.6); } .zone.zr.hit { background: rgba(144, 0, 255,.6); }
   #meterDot { position: absolute; top: 2px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--yellow); border: 2px solid var(--ink); }
   .hud-count span { font-family: Bungee, sans-serif; font-size: 16px; background: var(--ink); padding: 2px 10px; border-radius: 8px; }
 
   .track-chip {
     position: absolute; right: 16px; top: calc(28px + clamp(76px, 12vh, 104px)); font-family: Bungee, sans-serif; font-size: 12px;
-    background: rgba(11,6,20,.8); border: 3px solid var(--lime); color: var(--lime); border-radius: 10px; padding: 4px 8px;
+    background: rgba(22, 0, 46,.8); border: 3px solid var(--lime); color: var(--lime); border-radius: 10px; padding: 4px 8px;
   }
   .track-chip.slow { border-color: var(--orange); color: var(--orange); }
   .hud-timer {
@@ -267,21 +267,21 @@
   .buddy-bubble::before { left: 37px; bottom: -15px; border-width: 15px 8px 0 8px; border-top-color: #fff; z-index: 1; }
   .hud-buddy {
     position: absolute; left: 12px; bottom: 12px; width: clamp(110px, min(14vw, 22vh), 180px);
-    background: rgba(11,6,20,.65); border: 4px solid var(--lime); border-radius: 20px; padding: 8px 8px 4px;
+    background: rgba(22, 0, 46,.65); border: 4px solid var(--lime); border-radius: 20px; padding: 8px 8px 4px;
     box-shadow: 0 0 25px var(--lime);
   }
   .hud-buddy .lbl { font-family: Bungee, sans-serif; font-size: 11px; color: var(--lime); text-align: center; }
 
   .hud-race {
     position: absolute; right: 12px; bottom: 12px; width: min(360px, calc(100vw - 24px - clamp(130px, 22vw, 200px) - 12px));
-    background: rgba(11,6,20,.75); border: 4px solid var(--cyan); border-radius: 18px; padding: 10px 12px;
+    background: rgba(22, 0, 46,.75); border: 4px solid var(--cyan); border-radius: 18px; padding: 10px 12px;
     font-family: Bungee, sans-serif; font-size: 12px;
   }
-  .track { position: relative; height: 34px; margin: 8px 0 6px; border-radius: 999px; background: repeating-linear-gradient(90deg, #2b1b40 0 18px, #1d1030 18px 36px); border: 3px solid var(--paper); }
+  .track { position: relative; height: 34px; margin: 8px 0 6px; border-radius: 999px; background: repeating-linear-gradient(90deg, #2e0059 0 18px, #22004a 18px 36px); border: 3px solid var(--paper); }
   .runner { position: absolute; top: 50%; transform: translate(-50%,-50%); font-size: 22px; transition: left .12s linear; }
   .finish { position: absolute; right: -4px; top: -6px; bottom: -6px; width: 10px; background: repeating-linear-gradient(0deg, #fff 0 6px, #000 6px 12px); border-radius: 3px; }
   .race-row { display: flex; justify-content: space-between; gap: 8px; }
-  .speed { height: 10px; background: #2b1b40; border-radius: 999px; overflow: hidden; margin-top: 4px; }
+  .speed { height: 10px; background: #2e0059; border-radius: 999px; overflow: hidden; margin-top: 4px; }
   .speed i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--lime), var(--yellow), var(--pink)); transition: width .15s; }
 
   .banner {
@@ -354,7 +354,7 @@
   .consent .failed { display: none; }
   .consent .done .btn { margin-top: 10px; }
   .consent[data-state="posting"] .posting, .consent[data-state="done"] .done, .consent[data-state="failed"] .failed { display: block; }
-  .name-row input.missing { border-color: var(--red, #ff1f3d); box-shadow: 0 0 0 4px rgba(255, 31, 61, .35); animation: nudge .35s; }
+  .name-row input.missing { border-color: #ffd000; box-shadow: 0 0 0 4px rgba(255, 208, 0, .55); animation: nudge .35s; }
   @keyframes nudge { 25% { translate: -6px 0; } 75% { translate: 6px 0; } }
   .polaroid p { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: var(--ink); font-family: Bungee, sans-serif; font-size: 14px; }
   .board { padding: 16px 18px; }
@@ -381,8 +381,8 @@
     position: fixed; inset: 0; z-index: 48; display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: clamp(10px, 2vh, 24px); padding: 48px 16px 16px; text-align: center; cursor: pointer;
     background:
-      radial-gradient(circle, rgba(255,43,214,.45), transparent 60%),
-      repeating-conic-gradient(from 0deg, #2a0640 0deg 10deg, #170228 10deg 20deg), var(--bg);
+      radial-gradient(ellipse at 50% 55%, rgba(22, 0, 46, .55), rgba(22, 0, 46, .3) 75%),
+      #1e003d url("bg-leaderboard.jpg") center / cover no-repeat;
   }
   #intro.gone { animation: introOut .45s ease-in forwards; pointer-events: none; }
   @keyframes introOut { to { opacity: 0; transform: scale(1.4); } }
@@ -395,7 +395,7 @@
   .intro-sub { font-family: Bungee, sans-serif; font-size: clamp(18px, min(2.4vw, 3.4vh), 32px); color: var(--paper); }
   .toggles { position: fixed; right: 12px; bottom: 12px; z-index: 40; display: flex; gap: 8px; }
   .toggles .btn, .game-btns .btn { font-size: 16px; padding: 5px 10px; }
-  .toggles .btn.off, .game-btns .btn.off { background: #7d7690; }
+  .toggles .btn.off, .game-btns .btn.off { background: #7a62a0; }
   #game.active ~ .toggles { display: none; }
   .toggles .btn { display: inline-grid; place-items: center; min-width: 46px; }
   html.no-fs #fsBtn, html.no-fs #fsBtn2 { display: none; }
@@ -501,8 +501,8 @@
     <label class="name-row"><span class="opt-label">NAME</span><input id="nameInput" maxlength="14" placeholder="your name" autocomplete="off" required aria-required="true" /></label>
   </div>
   <button class="btn" id="startBtn">▶ START 67-ING</button>
-  <p class="hint">30 seconds. Palms up 🫴🫴, both hands in frame, then pump them up and down in turns as fast as you can. Every time your palms swap places = one rep. Light wiggles don't count.</p>
-  <a class="linkish" href="leaderboard.html" data-lb>🏆 leaderboard &amp; player profiles</a>
+  <p class="hint">30 seconds. Palms up, both hands in frame, then pump them up and down in turns as fast as you can. Every time your palms swap places = one rep. Light wiggles don't count.</p>
+  <a class="linkish" href="leaderboard.html" data-lb> Leaderboard &amp; Player Profiles</a>
 </section>
 
 <!-- ============ LOADER ============ -->
@@ -532,8 +532,8 @@
     <div class="track-chip" id="trackChip" hidden></div>
     <div class="hud-timer" id="timerBox">
       <svg viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r="42" fill="rgba(11,6,20,.75)" stroke="#0b0614" stroke-width="14" />
-        <circle id="timerRing" cx="50" cy="50" r="42" fill="none" stroke="#b6ff00" stroke-width="9" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="0" />
+        <circle cx="50" cy="50" r="42" fill="rgba(22, 0, 46,.75)" stroke="#16002e" stroke-width="14" />
+        <circle id="timerRing" cx="50" cy="50" r="42" fill="none" stroke="#ffd000" stroke-width="9" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="0" />
       </svg>
       <div class="t" id="timerTxt">30</div>
     </div>
@@ -594,7 +594,7 @@
         <div class="done"><p>✅ Your GIF is on the Hall of 67!</p><button class="btn small hot" id="gifShare">📤 SHARE YOUR GIF</button></div>
         <div class="failed"><p>Couldn't post your GIF.</p><button class="btn small" id="gifRetry">↻ TRY AGAIN</button></div>
       </div>
-      <div class="card board"><h3 id="boardTitle">🏆 HALL OF 67</h3><ol id="boardList"></ol></div>
+      <div class="card board"><h3 id="boardTitle">HALL OF 67</h3><ol id="boardList"></ol></div>
     </div>
   </div>
 </section>
@@ -603,7 +603,6 @@
   <div class="intro-mascot" data-mascot="frenzy"></div>
   <div class="tq-brand big"><img class="tq-logo" src="taqneeq-logo.jpg" alt="Taqneeq 19.0 logo" /><div class="tq-text"><b>TAQNEEQ 19.0</b><span>NMIMS MPSTME TECH FEST PRESENTS</span></div></div>
   <div class="intro-big">TAP ANYWHERE<br>TO ENTER</div>
-  <div class="intro-sub">FULLSCREEN + MUSIC 🎵 + 67s 🫴🫴</div>
 </div>
 
 <div class="toggles">
@@ -628,7 +627,7 @@ const $$ = (s) => [...document.querySelectorAll(s)];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-$("#marqueeText").textContent = "TAQNEEQ 19.0 ✦ SIX SEVEN ✦ 67 ✦ 🫴🫴 ✦ BREAK THE RECORD ✦ ".repeat(8);
+$("#marqueeText").textContent = "TAQNEEQ 19.0 ✦ SIX SEVEN ✦ 67 ✦ BREAK THE RECORD ✦ ".repeat(8);
 
 /* ---------- storage (best effort) ---------- */
 const store = {
@@ -1043,11 +1042,11 @@ function mascotSVG() {
     return `
     <g transform="translate(${110 + s * 58} 138)">
       <g class="arm${side}">
-        <path d="M0 0 Q${s * 20} 26 ${s * 46} -2" fill="none" stroke="#0b0614" stroke-width="15" stroke-linecap="round"/>
+        <path d="M0 0 Q${s * 20} 26 ${s * 46} -2" fill="none" stroke="#16002e" stroke-width="15" stroke-linecap="round"/>
         <path d="M0 0 Q${s * 20} 26 ${s * 46} -2" fill="none" stroke="url(#g${id})" stroke-width="8" stroke-linecap="round"/>
         <g transform="translate(${s * 50} -6)">
-          <path d="M-17 -2 Q0 16 17 -2 Z" fill="#ffd2a8" stroke="#0b0614" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M-14 -3 l-2 -7 M-7 -3 l-1 -8 M0 -3 l0 -8 M7 -3 l1 -8 M14 -3 l2 -7" stroke="#0b0614" stroke-width="4" stroke-linecap="round"/>
+          <path d="M-17 -2 Q0 16 17 -2 Z" fill="#ffd2a8" stroke="#16002e" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M-14 -3 l-2 -7 M-7 -3 l-1 -8 M0 -3 l0 -8 M7 -3 l1 -8 M14 -3 l2 -7" stroke="#16002e" stroke-width="4" stroke-linecap="round"/>
         </g>
       </g>
     </g>`;
@@ -1056,25 +1055,25 @@ function mascotSVG() {
   <svg class="mascot" viewBox="0 0 220 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <defs>
       <linearGradient id="g${id}" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0" stop-color="#ffe600"/><stop offset=".5" stop-color="#ff7a00"/><stop offset="1" stop-color="#ff2bd6"/>
+        <stop offset="0" stop-color="#ffd000"/><stop offset=".5" stop-color="#e0a800"/><stop offset="1" stop-color="#9000ff"/>
       </linearGradient>
     </defs>
     <ellipse cx="110" cy="230" rx="60" ry="8" fill="rgba(0,0,0,.35)"/>
     <g class="bob">
-      <rect x="80" y="196" width="20" height="30" rx="8" fill="#0b0614"/>
-      <rect x="120" y="196" width="20" height="30" rx="8" fill="#0b0614"/>
-      <rect x="52" y="58" width="116" height="148" rx="52" fill="url(#g${id})" stroke="#0b0614" stroke-width="6"/>
+      <rect x="80" y="196" width="20" height="30" rx="8" fill="#16002e"/>
+      <rect x="120" y="196" width="20" height="30" rx="8" fill="#16002e"/>
+      <rect x="52" y="58" width="116" height="148" rx="52" fill="url(#g${id})" stroke="#16002e" stroke-width="6"/>
       <!-- backwards cap -->
-      <path d="M60 78 Q110 30 160 78 Z" fill="#00e5ff" stroke="#0b0614" stroke-width="6" stroke-linejoin="round"/>
-      <rect x="40" y="70" width="34" height="12" rx="6" fill="#00e5ff" stroke="#0b0614" stroke-width="5"/>
+      <path d="M60 78 Q110 30 160 78 Z" fill="#d9a6ff" stroke="#16002e" stroke-width="6" stroke-linejoin="round"/>
+      <rect x="40" y="70" width="34" height="12" rx="6" fill="#d9a6ff" stroke="#16002e" stroke-width="5"/>
       <g class="eyes">
-        <circle cx="88" cy="106" r="15" fill="#fff" stroke="#0b0614" stroke-width="5"/>
-        <circle cx="132" cy="106" r="15" fill="#fff" stroke="#0b0614" stroke-width="5"/>
-        <circle class="pupil" cx="90" cy="106" r="6" fill="#0b0614"/>
-        <circle class="pupil" cx="134" cy="106" r="6" fill="#0b0614"/>
+        <circle cx="88" cy="106" r="15" fill="#fff" stroke="#16002e" stroke-width="5"/>
+        <circle cx="132" cy="106" r="15" fill="#fff" stroke="#16002e" stroke-width="5"/>
+        <circle class="pupil" cx="90" cy="106" r="6" fill="#16002e"/>
+        <circle class="pupil" cx="134" cy="106" r="6" fill="#16002e"/>
       </g>
-      <path class="mouth" d="M92 130 Q110 150 128 130 Z" fill="#7a0040" stroke="#0b0614" stroke-width="5" stroke-linejoin="round"/>
-      <text x="110" y="187" text-anchor="middle" font-size="40" fill="#fff" stroke="#0b0614" stroke-width="6" paint-order="stroke">67</text>
+      <path class="mouth" d="M92 130 Q110 150 128 130 Z" fill="#4a0080" stroke="#16002e" stroke-width="5" stroke-linejoin="round"/>
+      <text x="110" y="187" text-anchor="middle" font-size="40" fill="#fff" stroke="#16002e" stroke-width="6" paint-order="stroke">67</text>
       ${arm("L")}${arm("R")}
     </g>
   </svg>`;
@@ -1334,17 +1333,17 @@ function drawSkeleton(info, t) {
   const r = clamp(ch * 0.08, 50, 90);
   const dot = (q, label, col, glow) => {
     octx.fillStyle = glow; octx.beginPath(); octx.arc(q.x, q.y, r * 1.5, 0, Math.PI * 2); octx.fill();
-    octx.fillStyle = col; octx.strokeStyle = "#0b0614"; octx.lineWidth = 7;
+    octx.fillStyle = col; octx.strokeStyle = "#16002e"; octx.lineWidth = 7;
     octx.beginPath(); octx.arc(q.x, q.y, r, 0, Math.PI * 2); octx.fill(); octx.stroke();
     octx.font = `${Math.round(r * 1.25)}px Bungee, sans-serif`; octx.textAlign = "center"; octx.textBaseline = "middle";
-    octx.lineWidth = 8; octx.strokeStyle = "#0b0614"; octx.lineJoin = "round";
+    octx.lineWidth = 8; octx.strokeStyle = "#16002e"; octx.lineJoin = "round";
     octx.strokeText(label, q.x, q.y + r * 0.08);
     octx.fillStyle = "#fff"; octx.fillText(label, q.x, q.y + r * 0.08);
   };
   const fade = info.ok ? 1 : 0.4;
   octx.globalAlpha = fade;
-  dot(m(info.palmL), "6", "#ff1f3d", "rgba(255,31,61,.3)");
-  dot(m(info.palmR), "7", "#ff1f3d", "rgba(255,31,61,.3)");
+  dot(m(info.palmL), "6", "#9000ff", "rgba(144, 0, 255,.3)");
+  dot(m(info.palmR), "7", "#9000ff", "rgba(144, 0, 255,.3)");
   octx.globalAlpha = 1;
 }
 
@@ -1365,7 +1364,7 @@ function sprite(text, big) {
   c.width = w; c.height = size * 1.4 + pad * 2;
   x.font = big ? `${size}px Bungee, sans-serif` : `${size}px serif`;
   x.textAlign = "center"; x.textBaseline = "middle";
-  if (big) { x.lineWidth = 8; x.strokeStyle = "#0b0614"; x.lineJoin = "round"; x.strokeText(text, w / 2, c.height / 2); x.fillStyle = "#b6ff00"; }
+  if (big) { x.lineWidth = 8; x.strokeStyle = "#16002e"; x.lineJoin = "round"; x.strokeText(text, w / 2, c.height / 2); x.fillStyle = "#ffd000"; }
   x.fillText(text, w / 2, c.height / 2);
   sprites.set(key, c);
   return c;
@@ -1501,15 +1500,15 @@ function recordClip(now, info) {
     const at = (p) => ({ x: ox + (1 - p.x) * vw * sc, y: oy + p.y * vh * sc });
     for (const [p, label] of [[info.palmL, "6"], [info.palmR, "7"]]) {
       const q = at(p);
-      x.fillStyle = "#ff1f3d"; x.strokeStyle = "#0b0614"; x.lineWidth = 3;
+      x.fillStyle = "#9000ff"; x.strokeStyle = "#16002e"; x.lineWidth = 3;
       x.beginPath(); x.arc(q.x, q.y, 17, 0, Math.PI * 2); x.fill(); x.stroke();
       x.font = "20px Bungee, sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillStyle = "#fff";
       x.fillText(label, q.x, q.y + 1);
     }
   }
   x.textBaseline = "alphabetic"; x.textAlign = "right"; x.lineJoin = "round";
-  x.font = "44px Bungee, sans-serif"; x.lineWidth = 8; x.strokeStyle = "#0b0614";
-  x.strokeText(String(game.count), w - 10, h - 12); x.fillStyle = "#ffe600"; x.fillText(String(game.count), w - 10, h - 12);
+  x.font = "44px Bungee, sans-serif"; x.lineWidth = 8; x.strokeStyle = "#16002e";
+  x.strokeText(String(game.count), w - 10, h - 12); x.fillStyle = "#ffd000"; x.fillText(String(game.count), w - 10, h - 12);
   stampBrand(x);
   clip.frames.push(c);
   if (clip.frames.length > CLIP.frames) clip.frames.shift();
@@ -1577,7 +1576,7 @@ function updateHud(now) {
   const left = Math.max(0, game.dur - elapsed);
   text("#timerTxt", left < 5 ? left.toFixed(1) : Math.ceil(left));
   style("#timerRing", "strokeDashoffset", (264 * (1 - left / game.dur)).toFixed(1));
-  style("#timerRing", "stroke", left < 5 ? "#ff2bd6" : left < game.dur / 2 ? "#ffe600" : "#b6ff00");
+  style("#timerRing", "stroke", left < 5 ? "#9000ff" : left < game.dur / 2 ? "#ffd000" : "#ffd000");
   put("#timerBox", "u", left < 3, (el, x) => el.classList.toggle("urgent", x));
   put("#trackChip", "h", inputMode !== "cam", (el, x) => (el.hidden = x));
   if (inputMode === "cam" && perf.fps) {
@@ -1735,7 +1734,7 @@ function updateHudIdle() {
   $("#zoneL").classList.remove("hit"); $("#zoneR").classList.remove("hit");
   $("#timerTxt").textContent = game.dur;
   $("#timerRing").style.strokeDashoffset = "0";
-  $("#timerRing").style.stroke = "#b6ff00";
+  $("#timerRing").style.stroke = "#ffd000";
   $("#timerBox").classList.remove("urgent");
   $("#speedTxt").textContent = "0.0 / s"; $("#speedBar").style.width = "0";
   $("#raceYou").textContent = "0"; $("#raceGhost").textContent = game.record ? "0" : "—";
@@ -1828,7 +1827,7 @@ const cc = $("#confetti"), cx = cc.getContext("2d");
 let bits = [], confettiRunning = false;
 function confetti(n) {
   cc.width = innerWidth; cc.height = innerHeight;
-  const cols = ["#ff2bd6", "#b6ff00", "#00e5ff", "#ffe600", "#ff7a00"];
+  const cols = ["#9000ff", "#ffd000", "#d9a6ff", "#ffd000", "#e0a800"];
   for (let i = 0; i < n; i++) bits.push({
     x: Math.random() * cc.width, y: -20 - Math.random() * cc.height * 0.5,
     vx: (Math.random() - 0.5) * 4, vy: 2 + Math.random() * 4, r: Math.random() * 6.28, vr: (Math.random() - 0.5) * 0.3,

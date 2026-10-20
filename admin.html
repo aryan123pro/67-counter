@@ -11,8 +11,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Josefin+Sans:wght@300;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   :root {
-    --pink: #ff2bd6; --lime: #b6ff00; --cyan: #00e5ff; --yellow: #ffe600; --red: #ff1f3d; --gold: #ffc21a;
-    --ink: #0b0614; --paper: #fff8e7; --bg: #12021f; --muted: #b9adc9;
+    --pink: #9000ff; --lime: #ffd000; --cyan: #d9a6ff; --yellow: #ffd000; --red: #e0306a; --gold: #ffd000;
+    --ink: #16002e; --paper: #f6ecff; --bg: #1e003d; --muted: #c7b3e6;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--paper); font-family: "Space Mono", ui-monospace, monospace; min-height: 100vh; }
@@ -38,7 +38,7 @@
   .btn.danger { background: var(--red); color: #fff; }
   .btn.sm { font-size: 12px; padding: 5px 10px; box-shadow: 3px 3px 0 var(--ink); }
 
-  .panel { background: #1d0a33; border: 2px solid #3a2257; border-radius: 18px; padding: 18px; }
+  .panel { background: #250050; border: 2px solid #3d1470; border-radius: 18px; padding: 18px; }
   .msg { font-weight: 700; line-height: 1.5; color: var(--muted); }
   .msg b { color: var(--paper); }
 
@@ -55,25 +55,25 @@
   .stat small { color: var(--muted); font-size: 11px; }
 
   /* players */
-  .search { width: 100%; padding: 10px 12px; border: 2px solid #3a2257; border-radius: 12px; background: #12021f; color: var(--paper); margin-bottom: 12px; }
+  .search { width: 100%; padding: 10px 12px; border: 2px solid #3d1470; border-radius: 12px; background: #1e003d; color: var(--paper); margin-bottom: 12px; }
   .players { display: grid; gap: 12px; }
-  details.player { background: #1d0a33; border: 2px solid #3a2257; border-radius: 16px; }
+  details.player { background: #250050; border: 2px solid #3d1470; border-radius: 16px; }
   details.player[open] { border-color: var(--gold); }
   summary { list-style: none; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; cursor: pointer; }
   summary::-webkit-details-marker { display: none; }
-  .ava { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; background: #2a1b40; display: grid; place-items: center; font-family: Bungee, sans-serif; color: var(--yellow); }
+  .ava { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; background: #2e0059; display: grid; place-items: center; font-family: Bungee, sans-serif; color: var(--yellow); }
   .pname { font-family: Bungee, sans-serif; font-size: 18px; overflow-wrap: anywhere; }
   .pmeta { font-size: 12px; color: var(--muted); }
   .rounds { display: grid; gap: 8px; padding: 0 12px 12px; }
-  .round { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: #12021f; border-radius: 12px; padding: 8px; }
-  .round img, .round .nogif { width: 96px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #2a1b40; display: grid; place-items: center; font-size: 11px; color: var(--muted); }
+  .round { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: #1e003d; border-radius: 12px; padding: 8px; }
+  .round img, .round .nogif { width: 96px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #2e0059; display: grid; place-items: center; font-size: 11px; color: var(--muted); }
   .round .sc { font-family: Bungee, sans-serif; font-size: 24px; color: var(--pink); }
   .round .meta { font-size: 12px; color: var(--muted); }
-  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: #3a2257; color: var(--paper); margin-left: 6px; }
-  .tag.old { background: #5a3a12; }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: #3d1470; color: var(--paper); margin-left: 6px; }
+  .tag.old { background: #5c4a00; }
 
   dialog { width: min(440px, calc(100vw - 32px)); margin: auto; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 20px; padding: 22px; text-align: center; box-shadow: 8px 8px 0 var(--pink); }
-  dialog::backdrop { background: rgba(11, 6, 20, .75); }
+  dialog::backdrop { background: rgba(22, 0, 46, .75); }
   dialog h3 { font-family: Bungee, sans-serif; font-size: 22px; overflow-wrap: anywhere; }
   dialog p { font-weight: 700; margin: 10px 0 18px; }
   .cbtns { display: flex; gap: 10px; justify-content: center; }
