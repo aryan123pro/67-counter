@@ -233,28 +233,13 @@
   <header>
     <div class="brand-head"><div class="tq-brand"><img class="tq-logo" src="taqneeq-logo.jpg" alt="Taqneeq 19.0 logo" /><div class="tq-text"><b>TAQNEEQ 19.0</b><span>NMIMS MPSTME PRESENTS</span></div></div><h1>HALL OF 67</h1></div>
     <div class="head-btns">
-      <button class="btn alt" id="backupBtn" title="Download this device's leaderboard (with photos) as a file">⬇ BACKUP</button>
-      <button class="btn alt" id="adminBtn" hidden title="Unlock deleting on the shared leaderboard">🔑 ADMIN</button>
-      <button class="btn" id="rebrandBtn" hidden title="Add the Taqneeq 19.0 stamp to GIFs posted before the branding existed">🎨 RE-BRAND OLD GIFS</button>
-      <label class="btn alt" id="restoreLabel" title="Load a backup file into this device's leaderboard">⬆ RESTORE<input type="file" id="restoreInput" accept="application/json,.json" hidden /></label>
-      <button class="btn danger" id="clearAllBtn" title="Delete every score and GIF on this device">🗑 CLEAR ALL</button>
       <a class="btn" href="./">▶ PLAY</a>
     </div>
   </header>
   <p class="note" id="note">Scores and GIFs are saved on this device only, and stay after you reload.</p>
 
-  <div class="filters" role="group" aria-label="Leaderboard filter">
-    <span class="lbl">MODE</span>
-    <button class="chip" data-secs="15">15s SPRINT</button>
-    <button class="chip" data-secs="30">30s CLASSIC</button>
-    <button class="chip" data-secs="60">60s MARATHON</button>
-    <span class="sep"></span>
-    <button class="chip" data-input="cam">📸 CAMERA</button>
-    <button class="chip" data-input="kbd">⌨️ KEYS</button>
-  </div>
-
   <section>
-    <h2 id="topTitle">TOP 67ERS</h2>
+    <h2 id="topTitle">TOP 67ERS <small>30 SECONDS</small></h2>
     <div id="podium"></div>
     <ol class="rankings" id="rankings"></ol>
   </section>
@@ -266,29 +251,10 @@
 </main>
 
 <dialog id="profile"></dialog>
-<dialog id="adminDlg" class="confirm">
-  <h3>ADMIN PASSWORD</h3>
-  <p>Needed to delete players or clear the shared leaderboard. It's the ADMIN_KEY set in Vercel.</p>
-  <form id="adminForm">
-    <input type="password" id="adminPw" autocomplete="current-password" placeholder="password" aria-label="Admin password" />
-    <p class="err" id="adminErr" hidden>That's not it. Try again.</p>
-    <div class="cbtns"><button class="btn alt" type="button" id="adminCancel">CANCEL</button><button class="btn" type="submit">UNLOCK</button></div>
-  </form>
-</dialog>
-<dialog id="confirm" class="confirm">
-  <h3 id="cTitle"></h3>
-  <p id="cMsg"></p>
-  <div class="cbtns">
-    <button class="btn alt" id="cNo">KEEP IT</button>
-    <button class="btn danger" id="cYes">DELETE</button>
-  </div>
-  <button class="backup-hint" id="cBackup" hidden>⬇ download a backup first</button>
-</dialog>
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { allRuns, importRuns, exportBackup, deleteRuns, clearAll, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, attachGif, BRAND_VERSION } from "./leaderboard-store.js";
-import { rebrandGif, canRebrand } from "./gif-tools.js";
+import { allRuns, isShared } from "./leaderboard-store.js";
 // Inside the game (embedded layer): PLAY / GO 67 just close the layer, keeping fullscreen.
 // Opened directly: go fullscreen on the first tap (browsers need a tap before allowing it).
 const embedded = new URLSearchParams(location.search).has("embed") && window.parent !== window;
@@ -310,35 +276,13 @@ if (embedded) {
   addEventListener("keydown", goFull, { once: true });
 }
 const $ = (s, el = document) => el.querySelector(s);
-const MODES = { 15: "15s SPRINT", 30: "30s CLASSIC", 60: "60s MARATHON" };
 $("#marquee").textContent = "TAQNEEQ 19.0 ✦ HALL OF 67 ✦ SIX SEVEN ✦ 👑 ✦ WHO HAS THE FASTEST HANDS ✦ 🫴🫴 ✦ ".repeat(8);
 
-let runs = await allRuns();
-// shared board: everyone sees it, but only the admin (password from Vercel's ADMIN_KEY) can delete
+// the event runs one mode: 30-second camera rounds (older 15s/60s/keyboard rounds are hidden)
+const eventRounds = (list) => list.filter((r) => +r.secs === 30 && r.input === "cam");
+let runs = eventRounds(await allRuns());
 const sharedMode = isShared();
-let admin = sharedMode && getAdminKey() ? await checkAdmin(getAdminKey()) : false;
-const canDelete = () => !sharedMode || admin;
-const whereText = () => (sharedMode ? "from the shared leaderboard, for everyone" : "from this device");
-function applyMode() {
-  const note = $("#note");
-  note.textContent = sharedMode ? "LIVE — everyone who plays, on any device, shows up here." : "Scores and GIFs are saved on this device only, and stay after you reload.";
-  note.classList.toggle("live", sharedMode);
-  $("#restoreLabel").hidden = sharedMode;
-  $("#clearAllBtn").hidden = !canDelete();
-  $("#adminBtn").hidden = !(sharedMode && isAdminEnabled());
-  $("#adminBtn").textContent = admin ? "🔓 ADMIN ON" : "🔑 ADMIN";
-  updateRebrand();
-}
-// admin: GIFs without the current Taqneeq watermark (none, or an older design)
-const unbranded = () => runs.filter((r) => r.photo && (Number(r.branded) || 0) < BRAND_VERSION);
-function updateRebrand() {
-  const n = sharedMode && admin ? unbranded().length : 0;
-  $("#rebrandBtn").hidden = !n;
-  if (n && !$("#rebrandBtn").disabled) $("#rebrandBtn").textContent = `🎨 UPDATE BRANDING ON ${n} GIF${n === 1 ? "" : "S"}`;
-}
-applyMode();
-let view = { secs: 30, input: "cam" };
-try { Object.assign(view, JSON.parse(localStorage.getItem("67-lb-view") || "{}")); } catch {}
+if (sharedMode) { $("#note").textContent = "LIVE — everyone who plays, on any device, shows up here."; $("#note").classList.add("live"); }
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 function photo(src, cls, alt = "") {
@@ -366,8 +310,7 @@ function players() {
   for (const p of map.values()) {
     p.runs.sort((a, b) => String(b.at).localeCompare(String(a.at)));
     p.name = p.runs[0].name; // latest spelling
-    p.best = {}; // best camera score per mode
-    for (const r of p.runs) if (r.input === "cam" && (!p.best[r.secs] || r.score > p.best[r.secs].score)) p.best[r.secs] = r;
+    p.bestScore = Math.max(0, ...p.runs.map((r) => r.score));
     const top = [...p.runs].sort((a, b) => (b.rate || 0) - (a.rate || 0))[0];
     p.title = top && top.rank;
     p.total = p.runs.reduce((n, r) => n + r.score, 0);
@@ -380,16 +323,9 @@ function players() {
 }
 
 function render() {
-  updateRebrand();
-  try { localStorage.setItem("67-lb-view", JSON.stringify(view)); } catch {}
-  document.querySelectorAll(".chip[data-secs]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.secs === +view.secs)));
-  document.querySelectorAll(".chip[data-input]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.input === view.input)));
-  $("#topTitle").textContent = `TOP 67ERS — ${MODES[view.secs]}${view.input === "kbd" ? " (KEYS)" : ""}`;
-
-  // best run per player in this mode
+  // best run per player
   const best = new Map();
   for (const r of runs) {
-    if (+r.secs !== +view.secs || r.input !== view.input) continue;
     const b = best.get(key(r.name));
     if (!b || r.score > b.score) best.set(key(r.name), r);
   }
@@ -399,7 +335,7 @@ function render() {
   podium.replaceChildren(); list.replaceChildren();
   podium.className = "";
   if (!ranked.length) {
-    const e = el("div", "empty", "No 67s in this mode yet. Be the first legend.");
+    const e = el("div", "empty", "No 67s yet. Be the first legend.");
     const a = el("a", "btn", "▶ GO 67"); a.href = "./"; e.append(el("br"), a);
     podium.append(e);
   } else {
@@ -429,7 +365,7 @@ function render() {
   }
 
   // profiles: everyone, best overall first
-  const ps = players().sort((a, b) => Math.max(0, ...Object.values(a.best).map((r) => r.score)) < Math.max(0, ...Object.values(b.best).map((r) => r.score)) ? 1 : -1);
+  const ps = players().sort((a, b) => b.bestScore - a.bestScore);
   const grid = $("#profiles");
   grid.replaceChildren();
   if (!ps.length) grid.append(el("div", "empty", "No players yet."));
@@ -438,8 +374,8 @@ function render() {
     card.addEventListener("click", () => openProfile(key(p.name)));
     const body = el("div", "body");
     const bests = el("div", "bests");
-    for (const s of [15, 30, 60]) {
-      const d = el("div"); d.append(el("b", null, p.best[s] ? p.best[s].score : "—"), el("small", null, `${s}s BEST`)); bests.append(d);
+    for (const [v, l] of [[p.bestScore, "BEST"], [p.runs.length, "ROUNDS"], [`${p.peak.toFixed(1)}/s`, "PEAK"]]) {
+      const d = el("div"); d.append(el("b", null, v), el("small", null, l)); bests.append(d);
     }
     body.append(el("div", "nm", p.name));
     if (p.title) body.append(el("span", "badge", p.title));
@@ -474,11 +410,11 @@ function openProfile(k) {
   wallSec.append(el("h4", null, "🎞️ GIF WALL"));
   const wall = el("div", "wall");
   const shots = p.runs.filter((r) => r.photo).sort((a, b) => b.score - a.score);
-  if (!shots.length) wall.append(el("p", "meta", "No GIFs yet (keyboard rounds don't record one)."));
+  if (!shots.length) wall.append(el("p", "meta", "No GIFs yet."));
   for (const r of shots) {
     const s = el("div", "shot");
     const cap = el("div", "cap");
-    cap.append(el("span", null, `${r.secs}s · ${when(r.at)}`), el("b", null, r.score));
+    cap.append(el("span", null, when(r.at)), el("b", null, r.score));
     const dl = el("button", "btn dl", "⬇ GIF");
     dl.title = `Download ${p.name}'s ${r.score} GIF`;
     dl.addEventListener("click", () => downloadGif(r.photo, `${p.name}-${r.score}-67s`, dl));
@@ -491,61 +427,33 @@ function openProfile(k) {
   histSec.append(el("h4", null, "📜 EVERY ROUND"));
   const table = el("table", "history");
   const thead = el("tr");
-  for (const h of ["WHEN", "MODE", "SCORE", "SPEED", "RANK"]) thead.append(el("th", null, h));
+  for (const h of ["WHEN", "SCORE", "SPEED", "RANK"]) thead.append(el("th", null, h));
   table.append(thead);
   for (const r of p.runs) {
     const tr = el("tr");
-    tr.append(el("td", null, when(r.at)), el("td", null, `${r.secs}s ${r.input === "kbd" ? "⌨️" : "📸"}`), el("td", "n", r.score),
+    tr.append(el("td", null, when(r.at)), el("td", "n", r.score),
       el("td", null, `${(r.rate || 0).toFixed(1)}/s`), el("td", null, r.rank || ""));
     table.append(tr);
   }
   histSec.append(table);
 
-  const del = el("button", "btn danger", "🗑 DELETE PROFILE");
-  const actions = el("div", "prof-actions"); actions.append(del);
-  if (canDelete()) info.append(actions);
-  del.addEventListener("click", async () => {
-    const n = p.runs.length;
-    if (!(await ask(`Delete ${p.name}?`, `This removes their ${n} round${n === 1 ? "" : "s"} and GIF${n === 1 ? "" : "s"} ${whereText()}. It can't be undone.`))) return;
-    try { await deleteRuns(p.runs.map((r) => r.id)); }
-    catch (err) { return toast(`Couldn't delete: ${err.message}`); }
-    runs = await allRuns();
-    dlg.close(); render();
-    toast(`${p.name} deleted`);
-  });
   dlg.append(close, head, wallSec, histSec);
   dlg.showModal();
 }
 $("#profile").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 
-document.querySelectorAll(".chip[data-secs]").forEach((b) => b.addEventListener("click", () => { view.secs = +b.dataset.secs; render(); }));
-document.querySelectorAll(".chip[data-input]").forEach((b) => b.addEventListener("click", () => { view.input = b.dataset.input; render(); }));
 render();
 
 // keep it fresh: live every 10s on the shared board, or when you come back to this tab
 const signature = (list) => list.map((r) => r.id + (r.photo ? "+" : "")).join();
 async function refresh() {
   if (document.hidden || document.querySelector("dialog[open]")) return;
-  const next = await allRuns();
+  const next = eventRounds(await allRuns());
   if (signature(next) !== signature(runs)) { runs = next; render(); }
 }
 document.addEventListener("visibilitychange", refresh);
 if (sharedMode) setInterval(refresh, 10000);
 
-$("#adminBtn").addEventListener("click", () => {
-  if (admin) { admin = false; setAdminKey(""); applyMode(); render(); return toast("Admin mode off"); }
-  $("#adminErr").hidden = true; $("#adminPw").value = "";
-  $("#adminDlg").showModal();
-});
-$("#adminCancel").addEventListener("click", () => $("#adminDlg").close());
-$("#adminForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const key = $("#adminPw").value;
-  if (!(await checkAdmin(key))) { $("#adminErr").hidden = false; return; }
-  setAdminKey(key); admin = true;
-  $("#adminDlg").close(); applyMode(); render();
-  toast("Admin mode on — you can delete now");
-});
 
 // Save any player's clip to the device (works for shared-board URLs and on-device data URLs)
 async function downloadGif(src, baseName, btn) {
@@ -571,70 +479,6 @@ function toast(msg) {
   const t = $("#toast"); t.textContent = msg; t.classList.add("on");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
 }
-// styled yes/no instead of window.confirm(); resolves true only on DELETE
-function ask(title, msg, { offerBackup = false, yes = "DELETE" } = {}) {
-  const dlg = $("#confirm");
-  $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cBackup").hidden = !offerBackup;
-  $("#cYes").textContent = yes;
-  dlg.showModal();
-  $("#cNo").focus();
-  return new Promise((resolve) => {
-    const done = (v) => { dlg.close(); resolve(v); };
-    $("#cYes").onclick = () => done(true);
-    $("#cNo").onclick = () => done(false);
-    dlg.oncancel = () => resolve(false);
-  });
-}
-$("#cBackup").addEventListener("click", () => downloadBackup());
-
-// Re-brand: stamp every frame of each old GIF with the Taqneeq 19.0 branding and replace it on the board
-$("#rebrandBtn").addEventListener("click", async () => {
-  const todo = unbranded();
-  if (!todo.length) return;
-  if (!canRebrand()) return toast("Open this page in Chrome or Edge to re-brand GIFs");
-  if (!(await ask(`Re-brand ${todo.length} GIF${todo.length === 1 ? "" : "s"}?`, "Swaps any older stamp for the current Taqneeq 19.0 watermark on every frame and replaces the GIF on the shared leaderboard.", { yes: "RE-BRAND" }))) return;
-  const btn = $("#rebrandBtn");
-  btn.disabled = true;
-  let ok = 0, failed = 0;
-  for (const [i, r] of todo.entries()) {
-    btn.textContent = `🎨 RE-BRANDING ${i + 1}/${todo.length}…`;
-    try { await attachGif(r, await rebrandGif(r.photo, Number(r.branded) || 0), { admin: true }); ok++; }
-    catch (err) { console.warn("re-brand failed for", r.id, err); failed++; }
-  }
-  btn.disabled = false;
-  runs = await allRuns(); render();
-  toast(failed ? `Re-branded ${ok}, ${failed} failed — try again` : `Re-branded ${ok} GIF${ok === 1 ? "" : "s"} 🎨`);
-});
-$("#clearAllBtn").addEventListener("click", async () => {
-  if (!runs.length) return toast("Leaderboard is already empty");
-  const people = new Set(runs.map((r) => r.name.toLowerCase())).size;
-  if (!(await ask("Clear the whole leaderboard?", `Deletes all ${runs.length} rounds from ${people} player${people === 1 ? "" : "s"}, GIFs included, ${whereText()}. It can't be undone.`, { offerBackup: true }))) return;
-  try { await clearAll(); }
-  catch (err) { return toast(`Couldn't clear: ${err.message}`); }
-  runs = [];
-  render();
-  toast("Leaderboard cleared 🧹");
-});
-async function downloadBackup() {
-  const url = URL.createObjectURL(await exportBackup());
-  const a = Object.assign(document.createElement("a"), { href: url, download: `67-leaderboard-${new Date().toISOString().slice(0, 10)}.json` });
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-$("#backupBtn").addEventListener("click", downloadBackup);
-$("#restoreInput").addEventListener("change", async (e) => {
-  const file = e.target.files[0];
-  e.target.value = "";
-  if (!file) return;
-  try {
-    const data = JSON.parse(await file.text());
-    const added = await importRuns(Array.isArray(data) ? data : data.runs || []);
-    runs = await allRuns(); render();
-    toast(added ? `Restored ${added} round${added === 1 ? "" : "s"} 🎉` : "Nothing new in that file");
-  } catch {
-    toast("That file isn't a 67 leaderboard backup");
-  }
-});
 </script>
 </body>
 </html>

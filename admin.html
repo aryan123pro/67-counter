@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Admin · Hall of 67 · Taqneeq 19.0</title>
+<link rel="icon" type="image/png" href="tq-icon-64.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Josefin+Sans:wght@300;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --pink: #ff2bd6; --lime: #b6ff00; --cyan: #00e5ff; --yellow: #ffe600; --red: #ff1f3d; --gold: #ffc21a;
+    --ink: #0b0614; --paper: #fff8e7; --bg: #12021f; --muted: #b9adc9;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--paper); font-family: "Space Mono", ui-monospace, monospace; min-height: 100vh; }
+  button, input { font: inherit; }
+  main { width: min(1000px, 100%); margin: 0 auto; padding: 24px 16px 60px; display: grid; gap: 22px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand img { width: 52px; height: 52px; border-radius: 12px; border: 2px solid var(--gold); }
+  h1 { font-family: Bungee, sans-serif; font-size: clamp(24px, 4vw, 36px); line-height: 1; color: var(--gold); }
+  h1 small { display: block; font-family: "Josefin Sans", sans-serif; font-weight: 600; font-size: 12px; letter-spacing: .25em; color: var(--muted); margin-top: 6px; }
+  h2 { font-family: Bungee, sans-serif; font-size: 20px; margin-bottom: 10px; }
+
+  .btn {
+    font-family: Bungee, sans-serif; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    background: var(--lime); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px;
+    padding: 8px 14px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer; white-space: nowrap;
+  }
+  .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .btn.alt { background: var(--cyan); }
+  .btn.ghost { background: var(--paper); }
+  .btn.danger { background: var(--red); color: #fff; }
+  .btn.sm { font-size: 12px; padding: 5px 10px; box-shadow: 3px 3px 0 var(--ink); }
+
+  .panel { background: #1d0a33; border: 2px solid #3a2257; border-radius: 18px; padding: 18px; }
+  .msg { font-weight: 700; line-height: 1.5; color: var(--muted); }
+  .msg b { color: var(--paper); }
+
+  /* login */
+  #login { max-width: 420px; justify-self: center; width: 100%; display: grid; gap: 12px; }
+  #login input { width: 100%; padding: 12px 14px; border: 3px solid var(--ink); border-radius: 12px; background: var(--paper); color: var(--ink); font-weight: 700; font-size: 18px; }
+  .err { color: var(--red); font-weight: 700; }
+
+  /* toolbar + stats */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; }
+  .stat { background: var(--ink); border-radius: 12px; padding: 8px 14px; }
+  .stat b { font-family: Bungee, sans-serif; font-size: 22px; color: var(--lime); display: block; }
+  .stat small { color: var(--muted); font-size: 11px; }
+
+  /* players */
+  .search { width: 100%; padding: 10px 12px; border: 2px solid #3a2257; border-radius: 12px; background: #12021f; color: var(--paper); margin-bottom: 12px; }
+  .players { display: grid; gap: 12px; }
+  details.player { background: #1d0a33; border: 2px solid #3a2257; border-radius: 16px; }
+  details.player[open] { border-color: var(--gold); }
+  summary { list-style: none; display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 12px; cursor: pointer; }
+  summary::-webkit-details-marker { display: none; }
+  .ava { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; background: #2a1b40; display: grid; place-items: center; font-family: Bungee, sans-serif; color: var(--yellow); }
+  .pname { font-family: Bungee, sans-serif; font-size: 18px; overflow-wrap: anywhere; }
+  .pmeta { font-size: 12px; color: var(--muted); }
+  .rounds { display: grid; gap: 8px; padding: 0 12px 12px; }
+  .round { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 12px; align-items: center; background: #12021f; border-radius: 12px; padding: 8px; }
+  .round img, .round .nogif { width: 96px; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; background: #2a1b40; display: grid; place-items: center; font-size: 11px; color: var(--muted); }
+  .round .sc { font-family: Bungee, sans-serif; font-size: 24px; color: var(--pink); }
+  .round .meta { font-size: 12px; color: var(--muted); }
+  .tag { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; background: #3a2257; color: var(--paper); margin-left: 6px; }
+  .tag.old { background: #5a3a12; }
+
+  dialog { width: min(440px, calc(100vw - 32px)); margin: auto; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 20px; padding: 22px; text-align: center; box-shadow: 8px 8px 0 var(--pink); }
+  dialog::backdrop { background: rgba(11, 6, 20, .75); }
+  dialog h3 { font-family: Bungee, sans-serif; font-size: 22px; overflow-wrap: anywhere; }
+  dialog p { font-weight: 700; margin: 10px 0 18px; }
+  .cbtns { display: flex; gap: 10px; justify-content: center; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(140px); z-index: 30;
+    background: var(--lime); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px;
+    font-family: Bungee, sans-serif; padding: 10px 16px; transition: transform .25s; max-width: calc(100vw - 32px);
+  }
+  .toast.on { transform: translateX(-50%) translateY(0); }
+  [hidden] { display: none !important; }
+
+  @media (max-width: 560px) {
+    .round { grid-template-columns: 72px minmax(0, 1fr); }
+    .round img, .round .nogif { width: 72px; }
+    .round .btn { grid-column: 1 / -1; justify-self: start; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <img src="taqneeq-logo.jpg" alt="Taqneeq 19.0 logo" />
+      <h1>HALL OF 67 ADMIN<small>TAQNEEQ 19.0</small></h1>
+    </div>
+    <div class="toolbar">
+      <a class="btn ghost" href="/leaderboard.html">🏆 LEADERBOARD</a>
+      <a class="btn ghost" href="/">▶ GAME</a>
+      <button class="btn ghost" id="logoutBtn" hidden>LOG OUT</button>
+    </div>
+  </header>
+
+  <!-- not connected / not configured -->
+  <div class="panel msg" id="notice" hidden></div>
+
+  <!-- login -->
+  <form class="panel" id="login" hidden>
+    <h2>🔑 ADMIN PASSWORD</h2>
+    <p class="msg">The <b>ADMIN_KEY</b> set in Vercel → Settings → Environment Variables.</p>
+    <input type="password" id="pw" autocomplete="current-password" placeholder="password" aria-label="Admin password" required />
+    <p class="err" id="pwErr" hidden>That's not it. Try again.</p>
+    <button class="btn" type="submit">UNLOCK</button>
+  </form>
+
+  <!-- dashboard -->
+  <section id="dash" hidden>
+    <div class="panel" style="display:grid;gap:14px">
+      <div class="stats" id="stats"></div>
+      <div class="toolbar">
+        <button class="btn" id="rebrandBtn" hidden>🎨 UPDATE BRANDING</button>
+        <button class="btn alt" id="backupBtn">⬇ BACKUP</button>
+        <button class="btn danger" id="clearBtn">🗑 CLEAR ALL</button>
+        <button class="btn ghost" id="refreshBtn">↻ REFRESH</button>
+      </div>
+    </div>
+    <div style="margin-top:22px">
+      <h2>PLAYERS</h2>
+      <input class="search" id="search" type="search" placeholder="search players…" aria-label="Search players" />
+      <div class="players" id="players"></div>
+    </div>
+  </section>
+</main>
+
+<dialog id="confirm">
+  <h3 id="cTitle"></h3>
+  <p id="cMsg"></p>
+  <div class="cbtns"><button class="btn ghost" id="cNo">CANCEL</button><button class="btn danger" id="cYes">DELETE</button></div>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+import { allRuns, detect, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, deleteRuns, clearAll, exportBackup, attachGif, BRAND_VERSION } from "./leaderboard-store.js";
+import { rebrandGif, canRebrand } from "./gif-tools.js";
+
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+const when = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
+let runs = [];
+
+let toastTimer;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 2800); }
+function ask(title, msg, yes = "DELETE") {
+  const dlg = $("#confirm");
+  $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cYes").textContent = yes;
+  dlg.showModal(); $("#cNo").focus();
+  return new Promise((resolve) => {
+    const done = (v) => { dlg.close(); resolve(v); };
+    $("#cYes").onclick = () => done(true); $("#cNo").onclick = () => done(false);
+    dlg.oncancel = () => resolve(false);
+  });
+}
+
+/* ---------- access ---------- */
+async function boot() {
+  const shared = await detect();
+  if (!shared) {
+    $("#notice").hidden = false;
+    $("#notice").innerHTML = "The shared online leaderboard isn't connected here, so there's nothing to manage. Open this page on the deployed site (with Upstash Redis connected in Vercel).";
+    return;
+  }
+  if (!isAdminEnabled()) {
+    $("#notice").hidden = false;
+    $("#notice").innerHTML = "Admin is switched off. Set <b>ADMIN_KEY</b> in Vercel → Settings → Environment Variables, then redeploy.";
+    return;
+  }
+  if (getAdminKey() && (await checkAdmin(getAdminKey()))) return openDash();
+  setAdminKey("");
+  $("#login").hidden = false;
+  $("#pw").focus();
+}
+$("#login").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const key = $("#pw").value;
+  if (!(await checkAdmin(key))) { $("#pwErr").hidden = false; $("#pw").select(); return; }
+  setAdminKey(key);
+  $("#login").hidden = true;
+  openDash();
+});
+$("#logoutBtn").addEventListener("click", () => { setAdminKey(""); location.reload(); });
+
+/* ---------- dashboard ---------- */
+async function openDash() {
+  $("#dash").hidden = false; $("#logoutBtn").hidden = false;
+  await reload();
+}
+async function reload() {
+  runs = await allRuns();
+  render();
+}
+const outdated = () => runs.filter((r) => r.photo && (Number(r.branded) || 0) < BRAND_VERSION);
+
+function render() {
+  const people = new Map();
+  for (const r of runs) {
+    const k = r.name.toLowerCase();
+    if (!people.has(k)) people.set(k, { name: r.name, runs: [] });
+    people.get(k).runs.push(r);
+  }
+  const list = [...people.values()].map((p) => {
+    p.runs.sort((a, b) => b.score - a.score);
+    p.best = p.runs[0].score;
+    p.avatar = p.runs.find((r) => r.photo)?.photo;
+    return p;
+  }).sort((a, b) => b.best - a.best);
+
+  const stats = $("#stats");
+  stats.replaceChildren();
+  for (const [v, l] of [[list.length, "PLAYERS"], [runs.length, "ROUNDS"], [runs.filter((r) => r.photo).length, "GIFS"]]) {
+    const d = el("div", "stat"); d.append(el("b", null, v), el("small", null, l)); stats.append(d);
+  }
+  const n = outdated().length;
+  $("#rebrandBtn").hidden = !n;
+  if (!$("#rebrandBtn").disabled) $("#rebrandBtn").textContent = `🎨 UPDATE BRANDING ON ${n} GIF${n === 1 ? "" : "S"}`;
+
+  const q = $("#search").value.trim().toLowerCase();
+  const box = $("#players");
+  box.replaceChildren();
+  const shown = list.filter((p) => !q || p.name.toLowerCase().includes(q));
+  if (!shown.length) box.append(el("p", "msg", runs.length ? "No players match." : "No rounds yet."));
+  for (const p of shown) {
+    const det = el("details", "player");
+    const sum = el("summary");
+    const ava = p.avatar ? Object.assign(new Image(), { src: p.avatar, alt: "", className: "ava", loading: "lazy" }) : el("div", "ava", "67");
+    const who = el("div");
+    who.append(el("div", "pname", p.name), el("div", "pmeta", `best ${p.best} · ${p.runs.length} round${p.runs.length === 1 ? "" : "s"}`));
+    const del = el("button", "btn danger sm", "🗑 DELETE PLAYER");
+    del.addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!(await ask(`Delete ${p.name}?`, `Removes all ${p.runs.length} of their round${p.runs.length === 1 ? "" : "s"} and GIFs from the shared leaderboard. This can't be undone.`))) return;
+      await remove(p.runs.map((r) => r.id), `${p.name} deleted`);
+    });
+    sum.append(ava, who, del);
+    const rounds = el("div", "rounds");
+    for (const r of p.runs) {
+      const row = el("div", "round");
+      const pic = r.photo ? Object.assign(new Image(), { src: r.photo, alt: "", loading: "lazy" }) : el("div", "nogif", "no GIF");
+      const info = el("div");
+      const sc = el("div", "sc", r.score);
+      if (+r.secs !== 30 || r.input !== "cam") sc.append(el("span", "tag old", `${r.secs}s ${r.input === "kbd" ? "keys" : ""} · hidden`));
+      info.append(sc, el("div", "meta", `${when(r.at)} · ${(r.rate || 0).toFixed(1)}/s · ${r.rank || ""}`));
+      const rd = el("button", "btn danger sm", "🗑 DELETE");
+      rd.addEventListener("click", async () => {
+        if (!(await ask(`Delete this ${r.score}?`, `Removes ${p.name}'s round from ${when(r.at)} and its GIF. This can't be undone.`))) return;
+        await remove([r.id], "Round deleted");
+      });
+      row.append(pic, info, rd);
+      rounds.append(row);
+    }
+    det.append(sum, rounds);
+    box.append(det);
+  }
+}
+$("#search").addEventListener("input", render);
+$("#refreshBtn").addEventListener("click", async () => { await reload(); toast("Refreshed"); });
+
+async function remove(ids, done) {
+  try { await deleteRuns(ids); }
+  catch (err) { return toast(`Couldn't delete: ${err.message}`); }
+  await reload();
+  toast(done);
+}
+$("#clearBtn").addEventListener("click", async () => {
+  if (!runs.length) return toast("Leaderboard is already empty");
+  if (!(await ask("Clear the whole leaderboard?", `Deletes all ${runs.length} rounds and their GIFs for everyone. Download a backup first if you want to keep them. This can't be undone.`, "CLEAR ALL"))) return;
+  try { await clearAll(); } catch (err) { return toast(`Couldn't clear: ${err.message}`); }
+  await reload();
+  toast("Leaderboard cleared 🧹");
+});
+$("#backupBtn").addEventListener("click", async () => {
+  const url = URL.createObjectURL(await exportBackup());
+  const a = Object.assign(document.createElement("a"), { href: url, download: `67-leaderboard-${new Date().toISOString().slice(0, 10)}.json` });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+$("#rebrandBtn").addEventListener("click", async () => {
+  const todo = outdated();
+  if (!todo.length) return;
+  if (!canRebrand()) return toast("Use Chrome or Edge to update GIF branding");
+  if (!(await ask(`Update ${todo.length} GIF${todo.length === 1 ? "" : "s"}?`, "Replaces any older stamp with the current Taqneeq logo watermark on every frame.", "UPDATE"))) return;
+  const btn = $("#rebrandBtn");
+  btn.disabled = true;
+  let ok = 0, failed = 0;
+  for (const [i, r] of todo.entries()) {
+    btn.textContent = `🎨 UPDATING ${i + 1}/${todo.length}…`;
+    try { await attachGif(r, await rebrandGif(r.photo, Number(r.branded) || 0), { admin: true }); ok++; }
+    catch (err) { console.warn("update failed for", r.id, err); failed++; }
+  }
+  btn.disabled = false;
+  await reload();
+  toast(failed ? `Updated ${ok}, ${failed} failed — try again` : `Updated ${ok} GIF${ok === 1 ? "" : "s"} 🎨`);
+});
+
+boot();
+</script>
+</body>
+</html>

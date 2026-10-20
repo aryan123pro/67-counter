@@ -107,7 +107,7 @@
   }
 
   /* ---------- title ---------- */
-  #title { gap: clamp(6px, 1.3vh, 16px); text-align: center; overflow-y: auto; justify-content: safe center; padding-bottom: 70px; }
+  #title { gap: clamp(10px, 2.4vh, 28px); text-align: center; overflow-y: auto; justify-content: safe center; padding-bottom: 70px; }
   .logo {
     font-family: "Bungee Shade", Bungee, sans-serif;
     font-size: clamp(90px, min(22vw, 24vh), 260px); line-height: .85;
@@ -161,7 +161,6 @@
   .record-badge b { font-size: clamp(40px, min(4.6vw, 7vh), 72px); line-height: 1; color: #fff; }
   @keyframes pulse { 50% { transform: rotate(8deg) scale(1.08); } }
 
-  .modes { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
   .mode {
     font-family: Bungee, sans-serif; font-size: clamp(14px, min(1.4vw, 2.2vh), 21px);
     background: var(--paper); color: var(--ink); border: 3px solid var(--ink);
@@ -316,17 +315,6 @@
   /* pulses with `scale` so it doesn't clobber the centring transform */
   @keyframes warnPulse { from { scale: 1; } to { scale: 1.08; } }
 
-  .tap-pad { position: absolute; left: 0; right: 0; bottom: 18vh; display: none; justify-content: center; gap: 24px; }
-  .tap-pad.on { display: flex; }
-  .tap-pad button {
-    width: clamp(80px, 13vh, 110px); height: clamp(80px, 13vh, 110px); border-radius: 50%; font-family: Bungee, sans-serif; font-size: clamp(36px, 6vh, 50px);
-    border: 5px solid var(--ink); box-shadow: 6px 6px 0 var(--ink); color: var(--ink);
-  }
-  .tap-pad button:nth-child(1) { background: var(--cyan); }
-  .tap-pad button:nth-child(2) { background: var(--pink); color: #fff; }
-  .tap-pad button:active { transform: translate(4px,4px); box-shadow: 2px 2px 0 var(--ink); }
-  .kbd-bg { position: absolute; inset: 0; display: none; place-content: center; font-family: Bungee, sans-serif; font-size: min(30vw, 60vh); color: rgba(255,255,255,.05); }
-  .kbd-bg.on { display: grid; }
 
 
   /* ---------- results ---------- */
@@ -363,8 +351,10 @@
   .consent[hidden] { display: none; }
   .consent .cbtns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
   .consent .posting, .consent .done { display: none; font-family: Bungee, sans-serif; }
-  .consent[data-state="posting"] .ask, .consent[data-state="done"] .ask { display: none; }
-  .consent[data-state="posting"] .posting, .consent[data-state="done"] .done { display: block; }
+  .consent .failed { display: none; }
+  .consent[data-state="posting"] .posting, .consent[data-state="done"] .done, .consent[data-state="failed"] .failed { display: block; }
+  .name-row input.missing { border-color: var(--red, #ff1f3d); box-shadow: 0 0 0 4px rgba(255, 31, 61, .35); animation: nudge .35s; }
+  @keyframes nudge { 25% { translate: -6px 0; } 75% { translate: 6px 0; } }
   .polaroid p { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: var(--ink); font-family: Bungee, sans-serif; font-size: 14px; }
   .board { padding: 16px 18px; }
   .board h3 { font-family: Bungee, sans-serif; font-size: 18px; margin-bottom: 8px; }
@@ -428,8 +418,6 @@
     .tq-brand:not(.big) .tq-text b { font-size: 20px; }
     .tq-brand .tq-text span { letter-spacing: .16em; font-size: 10px; }
     .consent { order: -1; } /* ask about the GIF right under the score on phones */
-    .modes { gap: 6px; flex-wrap: nowrap; }
-    .mode[data-secs] { font-size: clamp(10px, 2.9vw, 14px); padding: 6px 9px; white-space: nowrap; }
     .hint { font-size: 12px; }
     /* home: mascot on its own row (speech bubble beside it), then logo + record badge */
     .title-row { display: grid; grid-template-columns: auto auto; justify-content: center; align-items: center; column-gap: 12px; row-gap: 0; }
@@ -462,11 +450,10 @@
     .hud-race { width: calc(100vw - 24px - clamp(92px, 25vw, 130px) - 10px); padding: 8px 10px; }
     .track { height: 26px; }
     .runner { font-size: 18px; }
-    .tap-pad { bottom: calc(clamp(92px, 25vw, 130px) * 1.35 + 70px); gap: 28px; }
   }
   /* shorter phones in portrait: tighter Taqneeq lockup so the home screen doesn't scroll */
   @media (max-width: 720px) and (max-height: 780px) {
-    #title { gap: 5px; }
+    #title { gap: 9px; }
     .tq-brand:not(.big) { padding: 4px 12px 4px 4px; }
     .tq-brand:not(.big) .tq-logo { width: 38px; border-radius: 10px; }
     .tq-brand:not(.big) .tq-text b { font-size: 17px; }
@@ -490,7 +477,6 @@
     .hud-buddy { width: clamp(80px, 22vh, 110px); }
     .buddy-bubble { max-width: 40vw; }
     .hud-race { width: min(320px, 42vw); }
-    .tap-pad { bottom: auto; top: 50%; transform: translateY(-50%); gap: 34vw; }
   }
   @media (prefers-reduced-motion: reduce) {
     .backdrop, .logo, .marquee span, .record-badge { animation: none; }
@@ -510,20 +496,12 @@
     <div class="record-badge"><small>RECORD</small><b id="titleRecord">0</b><small id="titleRecordBy">no one yet</small></div>
   </div>
   <div class="tag">HOW MANY 6-7s CAN YOU DO?</div>
-  <div class="modes" role="group" aria-label="Round length">
-    <button class="mode" data-secs="15">15s SPRINT</button>
-    <button class="mode" data-secs="30" aria-pressed="true">30s CLASSIC</button>
-    <button class="mode" data-secs="60">60s MARATHON</button>
-  </div>
   <div class="setting-row">
-    <label class="name-row"><span class="opt-label">NAME</span><input id="nameInput" maxlength="14" placeholder="empty = random 🎲" autocomplete="off" /></label>
+    <label class="name-row"><span class="opt-label">NAME</span><input id="nameInput" maxlength="14" placeholder="your name" autocomplete="off" required aria-required="true" /></label>
   </div>
   <button class="btn" id="startBtn">▶ START 67-ING</button>
-  <p class="hint">Palms up 🫴🫴, both hands in frame, then pump them up and down in turns as fast as you can. Every time your palms swap places = one rep. Light wiggles don't count.</p>
-  <div class="setting-row">
-    <a class="linkish" href="leaderboard.html" data-lb>🏆 leaderboard &amp; player profiles</a>
-    <button class="linkish" id="kbdBtn">no camera? play with the 6 / 7 keys instead</button>
-  </div>
+  <p class="hint">30 seconds. Palms up 🫴🫴, both hands in frame, then pump them up and down in turns as fast as you can. Every time your palms swap places = one rep. Light wiggles don't count.</p>
+  <a class="linkish" href="leaderboard.html" data-lb>🏆 leaderboard &amp; player profiles</a>
 </section>
 
 <!-- ============ LOADER ============ -->
@@ -538,7 +516,6 @@
 <section class="screen" id="game">
   <div id="stage">
     <video id="cam" playsinline muted></video>
-    <div class="kbd-bg" id="kbdBg">67</div>
     <canvas id="overlay"></canvas>
     <canvas id="fx"></canvas>
     <div class="vignette"></div>
@@ -582,7 +559,6 @@
       <div class="speed"><i id="speedBar"></i></div>
     </div>
 
-    <div class="tap-pad" id="tapPad"><button data-k="6">6</button><button data-k="7">7</button></div>
     <div class="warn" id="warn">🙌 SHOW BOTH HANDS</div>
     <div class="hype" id="hype"></div>
     <div class="banner" id="banner"></div>
@@ -612,11 +588,10 @@
     <div class="side">
       <div class="polaroid" id="polaroid"><img id="snap" alt="Animated GIF of you mid-67" /><p>YOUR FASTEST 2.5s 🎞️</p>
         <a class="btn small gif-dl" id="gifDl" download="my-67.gif">⬇ GIF</a></div>
-      <div class="card consent" id="consent" data-state="ask" hidden>
-        <p class="ask">Post your GIF to the public <b>Hall of 67</b>? Your score is already up there.</p>
-        <div class="ask cbtns"><button class="btn small" id="gifYes">📤 POST IT</button><button class="btn small alt" id="gifNo">NO THANKS</button></div>
-        <p class="posting">📤 posting your GIF…</p>
+      <div class="card consent" id="consent" data-state="posting" hidden>
+        <p class="posting">📤 posting your GIF to the Hall of 67…</p>
         <p class="done">✅ Your GIF is on the Hall of 67!</p>
+        <div class="failed"><p>Couldn't post your GIF.</p><button class="btn small" id="gifRetry">↻ TRY AGAIN</button></div>
       </div>
       <div class="card board"><h3 id="boardTitle">🏆 HALL OF 67</h3><ol id="boardList"></ol></div>
     </div>
@@ -660,10 +635,10 @@ const store = {
 };
 
 /* ---------- state ---------- */
-const MODES = { "15": "15s SPRINT", "30": "30s CLASSIC", "60": "60s MARATHON" };
-let secs = store.get("67-mode", "30");
-if (!MODES[secs]) secs = "30";
-let inputMode = "cam"; // "cam" | "kbd"
+// one mode for the event: 30 seconds, camera
+const MODES = { "30": "30s CLASSIC" };
+const secs = "30";
+const inputMode = "cam";
 let muted = store.get("67-muted", false);
 // Leaderboard + photos are stored in this browser (IndexedDB via leaderboard-store.js),
 // so they survive reloads and the game stays a plain static site.
@@ -683,42 +658,30 @@ function bestPerPlayer(list) {
 }
 const getBoard = () => bestPerPlayer(runs.filter((r) => String(r.secs) === secs && r.input === inputMode));
 const getRecord = () => getBoard()[0] || null;
-// Shared mode posts the score straight away (the GIF only goes up if the player taps POST IT).
+// Shared mode posts the score straight away, then the round's GIF is uploaded automatically.
 // If the shared board can't be reached, it's saved on this device instead (GIF included).
 async function saveRun(run) {
   runs.push(run); // show it straight away
   const photo = run.photo;
   const saved = await addRun(run);
   Object.assign(run, saved);
-  if (saved.shared) run.photo = null; // not public until they agree
+  if (saved.shared) run.photo = null; // set once the upload lands
   return { saved, photo };
+}
+async function postGif(entry) {
+  const consent = $("#consent");
+  consent.hidden = false; consent.dataset.state = "posting";
+  try {
+    Object.assign(entry, await attachGif(entry, await gifForUpload()));
+    if (game.lastEntry === entry) consent.dataset.state = "done";
+  } catch (err) {
+    console.warn("GIF upload failed:", err);
+    if (game.lastEntry === entry) consent.dataset.state = "failed";
+  }
 }
 // keep the home screen's record / announcer lines in sync with rounds played on other devices
 setInterval(() => { if (!document.hidden && $("#title").classList.contains("active")) loadRuns(); }, 20000);
 
-// No typed name → a random one (e.g. "TurboOtter42"), so anonymous players don't all pile into one
-// profile. It's regenerated for each new player; AGAIN keeps it (same person, same profile).
-const NAME_A = ["Sigma", "Aura", "Turbo", "Rizzy", "Hyper", "Mega", "Zesty", "Goofy", "Swift", "Spicy", "Cosmic", "Rapid", "Chill", "Lucky", "Ultra", "Neon"];
-const NAME_B = ["Fox", "Panda", "Tiger", "Otter", "Koala", "Llama", "Shark", "Gecko", "Moose", "Bunny", "Raven", "Lemur", "Yak", "Duck", "Owl", "Croc"];
-const pickOne = (list) => list[(Math.random() * list.length) | 0];
-function randomName() {
-  const taken = new Set(runs.map((r) => r.name.toLowerCase()));
-  for (let i = 0; i < 50; i++) {
-    const n = `${pickOne(NAME_A)}${pickOne(NAME_B)}${10 + ((Math.random() * 90) | 0)}`; // ≤ 14 chars
-    if (!taken.has(n.toLowerCase())) return n;
-  }
-  return `Player${Date.now().toString(36).slice(-6)}`;
-}
-// typing your own name makes it yours (not auto-replaced)
-$("#nameInput").addEventListener("input", (e) => { delete e.target.dataset.auto; });
-$$(".mode[data-secs]").forEach((b) => {
-  b.setAttribute("aria-pressed", String(b.dataset.secs === secs));
-  b.onclick = () => {
-    secs = b.dataset.secs; store.set("67-mode", secs);
-    $$(".mode[data-secs]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
-    refreshTitle(); sfx.blip(520 + Math.random() * 300, 0.06);
-  };
-});
 function refreshTitle() {
   const rec = getRecord();
   $("#titleRecord").textContent = rec ? rec.score : 0;
@@ -1486,7 +1449,7 @@ const coach = {
 const HYPE = { 6: "SIX…", 7: "…SEVEN!! 🫴", 10: "WARMING UP 🔥", 20: "SHEEESH", 30: "AURA +1000", 41: "DON'T STOP", 50: "50?! 😳", 60: "ALMOST…", 67: "SIIIX SEVEEEN 🗿", 80: "UNHINGED", 100: "TRIPLE DIGITS 💀", 134: "67 × 2 ‼️", 150: "CALL A DOCTOR", 200: "YOU ARE THE TREND" };
 const game = {
   running: false, count: 0, start: 0, dur: 20, times: [], peak: 0, recordBroken: false,
-  record: null, raf: 0, lastKey: null, clip: null, gifUrl: null, quit: false,
+  record: null, raf: 0, clip: null, gifUrl: null, quit: false,
 };
 
 const POP_KF = [{ transform: "scale(1.35) rotate(-6deg)" }, { transform: "scale(1)" }];
@@ -1633,22 +1596,6 @@ function updateHud(now) {
   return left;
 }
 
-/* ---------- keyboard / tap input (alternate 6 and 7) ---------- */
-function keyPress(k) {
-  if (!game.running || inputMode !== "kbd") return;
-  if (k === game.lastKey) return; // must alternate!
-  game.lastKey = k;
-  const up = k === "6" ? 1 : -1;
-  liveTarget.l = up; liveTarget.r = -up; liveTarget.tracked = true;
-  addCount();
-}
-addEventListener("keydown", (e) => {
-  if (e.repeat) return;
-  const map = { "6": "6", "7": "7", ArrowLeft: "6", ArrowRight: "7", a: "6", d: "7" };
-  if (map[e.key] && game.running) { e.preventDefault(); keyPress(map[e.key]); }
-});
-$$("#tapPad button").forEach((b) => b.addEventListener("pointerdown", (e) => { e.preventDefault(); keyPress(b.dataset.k); }));
-
 /* ---------- flow ---------- */
 // Waits for both hands, then spends ~1.2s measuring how much the tracking jitters while
 // the player holds still. That jitter sets the detector's noise floor ("tuned to your hands").
@@ -1693,28 +1640,27 @@ async function countdown() {
   setTimeout(() => $("#banner").textContent = "", 700);
 }
 
-async function startGame({ again = false } = {}) {
+async function startGame() {
+  const nameInput = $("#nameInput");
+  const name = nameInput.value.trim().slice(0, 14);
+  if (!name) { // a name is required — it's how your rounds and GIFs show up on the leaderboard
+    show("title");
+    nameInput.classList.remove("missing"); void nameInput.offsetWidth; nameInput.classList.add("missing");
+    nameInput.focus();
+    toast("Type your name first ✍️");
+    return;
+  }
   enterFS(); // must run synchronously inside the click for the browser to allow it
   sfx.init(); music.start();
-  const nameInput = $("#nameInput");
-  if (!nameInput.value.trim() || (nameInput.dataset.auto && !again)) {
-    nameInput.value = randomName();
-    nameInput.dataset.auto = "1";
-    toast(`No name? You're ${nameInput.value} 🎲`);
-  }
-  const name = nameInput.value.trim().slice(0, 14);
-  Object.assign(game, { running: false, count: 0, times: [], peak: 0, recordBroken: false, dur: parseFloat(secs), lastKey: null, clip: inputMode === "cam" ? newClip() : null, gifUrl: null, quit: false, name });
+  Object.assign(game, { running: false, count: 0, times: [], peak: 0, recordBroken: false, dur: parseFloat(secs), clip: inputMode === "cam" ? newClip() : null, gifUrl: null, quit: false, name });
   game.record = getRecord();
   detector.reset();
   liveTarget.tracked = false;
   $("#count").textContent = "0";
   $("#banner").textContent = ""; $("#warn").classList.remove("on");
-  $("#tapPad").classList.toggle("on", inputMode === "kbd");
-  $("#kbdBg").classList.toggle("on", inputMode === "kbd");
-  video.style.display = inputMode === "cam" ? "" : "none";
-  $("#buddyLbl").textContent = inputMode === "cam" ? "YOUR 67 BUDDY (COPIES YOU)" : "YOUR 67 BUDDY";
-  $("#countLbl").textContent = inputMode === "cam" ? "SIX SEVENS" : matchMedia("(pointer: coarse)").matches ? "TAP 6 / 7 IN TURNS" : "ALTERNATE 6 / 7 KEYS";
-  $("#meter").hidden = inputMode !== "cam";
+  $("#buddyLbl").textContent = "YOUR 67 BUDDY (COPIES YOU)";
+  $("#countLbl").textContent = "SIX SEVENS";
+  $("#meter").hidden = false;
   updateHudIdle();
 
   if (inputMode === "cam") {
@@ -1723,7 +1669,7 @@ async function startGame({ again = false } = {}) {
     } catch (err) {
       console.error(err);
       show("title");
-      toast(err?.name === "NotAllowedError" ? "Camera blocked 😭 allow it, or use the 6/7 keys" : "Camera/model failed to load — try the 6/7 keys");
+      toast(err?.name === "NotAllowedError" ? "Camera blocked 😭 allow camera access and try again" : "Camera failed to load — reload the page and try again");
       return;
     }
   }
@@ -1817,18 +1763,15 @@ function showResults() {
     peak: +game.peak.toFixed(2), rank: rankFor(score, game.dur), photo, at: new Date().toISOString(),
   };
   const saving = score > 0 ? saveRun(entry) : null;
-  // shared board: ask before the GIF goes public
-  const consent = $("#consent");
-  consent.hidden = true;
+  // shared board: the GIF goes up automatically
+  $("#consent").hidden = true;
   game.lastEntry = entry;
-  if (photo && saving) saving.then(({ saved }) => {
-    if (saved.shared && game.lastEntry === entry) { consent.dataset.state = "ask"; consent.hidden = false; }
-  });
+  if (photo && saving) saving.then(({ saved }) => { if (saved.shared && game.lastEntry === entry) postGif(entry); });
   const top = getBoard().slice(0, 10);
   const isRecord = score > 0 && (!prev || score > prev.score);
 
   show("results");
-  const modeTag = inputMode === "kbd" ? " (KEYS)" : "";
+  const modeTag = "";
   $("#resMode").textContent = `${MODES[secs]}${modeTag} • ${game.name.toUpperCase()} HIT`;
   $("#resRank").textContent = rankFor(score, game.dur);
   $("#resRate").textContent = (score / game.dur).toFixed(1);
@@ -2018,31 +1961,19 @@ addEventListener("message", (e) => { if (e.origin === location.origin && e.data 
 if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) document.documentElement.classList.add("no-fs");
 
 /* ---------- buttons ---------- */
-$("#startBtn").onclick = () => { inputMode = "cam"; startGame(); };
-$("#kbdBtn").onclick = () => { inputMode = "kbd"; startGame(); };
-$("#againBtn").onclick = () => startGame({ again: true }); // same player → same name
+$("#startBtn").onclick = () => startGame();
+$("#nameInput").addEventListener("keydown", (e) => { if (e.key === "Enter") startGame(); });
+$("#nameInput").addEventListener("input", (e) => e.target.classList.remove("missing"));
+$("#againBtn").onclick = () => startGame(); // same player → same name
 $("#homeBtn").onclick = () => {
   // back to the menu = next player: clear the name so they don't play under someone else's
-  const nameInput = $("#nameInput"); nameInput.value = ""; delete nameInput.dataset.auto;
-  inputMode = "cam"; refreshTitle(); show("title");
+  $("#nameInput").value = "";
+  refreshTitle(); show("title");
 };
-$("#quitBtn").onclick = () => { coach.stop(); game.quit = true; game.running = false; inputMode = "cam"; refreshTitle(); show("title"); };
+$("#quitBtn").onclick = () => { coach.stop(); game.quit = true; game.running = false; refreshTitle(); show("title"); };
 $("#fsBtn").onclick = $("#fsBtn2").onclick = () => (isFS() ? exitFS() : enterFS());
 syncFS();
-$("#gifYes").onclick = async () => {
-  const consent = $("#consent"), entry = game.lastEntry;
-  consent.dataset.state = "posting";
-  try {
-    Object.assign(entry, await attachGif(entry, await gifForUpload()));
-    consent.dataset.state = "done";
-    sfx.fanfare();
-  } catch (err) {
-    console.warn("GIF upload failed:", err);
-    consent.dataset.state = "ask";
-    toast(`Couldn't post the GIF (${err.message}) — try again`);
-  }
-};
-$("#gifNo").onclick = () => { $("#consent").hidden = true; };
+$("#gifRetry").onclick = () => postGif(game.lastEntry);
 $("#shareBtn").onclick = async () => {
   try { await navigator.clipboard.writeText(game.lastShare); toast("Copied! go flex 💅"); }
   catch { toast(game.lastShare); }

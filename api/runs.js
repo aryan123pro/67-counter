@@ -11,7 +11,7 @@
 import crypto from "node:crypto";
 import * as db from "./_db.js";
 
-const VALID_SECS = new Set([15, 30, 60]);
+const VALID_SECS = new Set([30]); // the event runs 30-second camera rounds only
 const MAX_GIF_BYTES = 800 * 1024; // the game shrinks clips to ~550 KB before posting; keeps each Redis write under 1 MB
 
 const clean = (v, n) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, n);
@@ -56,11 +56,13 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       const b = body(req);
       const secs = Number(b.secs);
-      const input = b.input === "kbd" ? "kbd" : b.input === "cam" ? "cam" : null;
+      const input = b.input === "cam" ? "cam" : null;
       if (!VALID_SECS.has(secs) || !input) return res.status(400).json({ error: "bad mode" });
+      const name = clean(b.name, 14);
+      if (!name) return res.status(400).json({ error: "name required" });
       const run = {
         id: `${Date.now().toString(36)}-${crypto.randomBytes(4).toString("hex")}`,
-        name: clean(b.name, 14) || "anon",
+        name,
         score: Math.round(num(b.score, 0, secs * 20)), // nobody does 20 swaps a second
         secs, input,
         rate: Math.round(num(b.rate, 0, 20) * 100) / 100,

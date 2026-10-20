@@ -9,12 +9,12 @@ leaderboard with player profiles.
 1. Import this repo in Vercel (no build settings needed).
 2. **Storage → Marketplace → Upstash Redis → Create / Connect** to this project (free tier is plenty).
    This adds the `KV_REST_API_URL` / `KV_REST_API_TOKEN` environment variables.
-3. **Settings → Environment Variables → `ADMIN_KEY`** = a password of your choice. On the leaderboard page,
-   🔑 ADMIN + this password unlocks deleting players and clearing the board.
+3. **Settings → Environment Variables → `ADMIN_KEY`** = a password of your choice. Open **`/admin`** on the site
+   and log in with it to delete players or rounds, clear the board, download a backup or update GIF branding.
 4. Redeploy so the new variables are picked up.
 
-Every device then shares one live leaderboard. Scores post automatically; a player's GIF is only
-uploaded if they tap **POST IT** on the results screen.
+Every device then shares one live leaderboard. Players must enter a name; each 30-second round's
+score and highlight GIF post automatically.
 
 Without the database (or when served by a plain static server) the game still works and keeps the
 leaderboard on each device instead.
