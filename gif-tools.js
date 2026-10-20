@@ -89,7 +89,8 @@ export async function encodeGif(frames, { w = FRAME_W, h = FRAME_H, colors = 256
 
 // Real camera footage is grainy and makes big GIFs, so the copy posted online is shrunk
 // step by step until it fits the upload limit (downloads from the results screen keep full quality).
-export const UPLOAD_BUDGET = 550 * 1024;
+// ~300 KB keeps 400 GIFs (stored as base64, ~1.33×) around 160 MB — inside Upstash's free 256 MB.
+export const UPLOAD_BUDGET = 300 * 1024;
 const UPLOAD_LEVELS = [
   {},
   { w: 240, h: 180, colors: 128 },

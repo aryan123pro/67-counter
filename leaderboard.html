@@ -83,16 +83,9 @@
   [hidden] { display: none !important; }
   .confirm input { display: block; width: 100%; font: 700 18px "Space Mono", monospace; padding: 10px 12px; border: 3px solid var(--ink); border-radius: 10px; margin: 0 0 12px; }
   .confirm .err { color: var(--red); margin: 0 0 12px; }
-  .note.live { color: var(--lime); }
-  .note.live::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--lime); margin-right: 8px; animation: blink 1.2s infinite; }
   @keyframes blink { 50% { opacity: .2; } }
   .confirm .backup-hint { display: block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: underline; background: none; border: 0; cursor: pointer; width: 100%; }
   .head-btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-  .note {
-    font-weight: 700; opacity: .9; justify-self: start; margin-top: -8px;
-    background: rgba(22, 0, 46, .55); border: 2px solid rgba(246, 236, 255, .12); border-radius: 999px; padding: 6px 14px;
-  }
-  .note.live { border-color: rgba(255, 208, 0, .35); }
   .toast {
     position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(140px); z-index: 30;
     background: var(--lime); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px;
@@ -234,7 +227,6 @@
       <a class="btn" href="./">▶ PLAY</a>
     </div>
   </header>
-  <p class="note" id="note">Scores and GIFs are saved on this device only, and stay after you reload.</p>
 
   <section class="board-wrap">
     <h2 id="topTitle">TOP 67ERS <small>30 SECONDS</small></h2>
@@ -277,7 +269,6 @@ $("#marquee").textContent = "TAQNEEQ 19.0 ✦ HALL OF 67 ✦ SIX SEVEN ✦ 👑 
 const eventRounds = (list) => list.filter((r) => +r.secs === 30 && r.input === "cam");
 let runs = eventRounds(await allRuns());
 const sharedMode = isShared();
-if (sharedMode) { $("#note").textContent = "LIVE — everyone who plays, on any device, shows up here."; $("#note").classList.add("live"); }
 
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 function photo(src, cls, alt = "") {
