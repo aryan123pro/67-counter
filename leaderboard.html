@@ -598,7 +598,7 @@ $("#rebrandBtn").addEventListener("click", async () => {
   let ok = 0, failed = 0;
   for (const [i, r] of todo.entries()) {
     btn.textContent = `🎨 RE-BRANDING ${i + 1}/${todo.length}…`;
-    try { await attachGif(r, await rebrandGif(r.photo), { admin: true }); ok++; }
+    try { await attachGif(r, await rebrandGif(r.photo, Number(r.branded) || 0), { admin: true }); ok++; }
     catch (err) { console.warn("re-brand failed for", r.id, err); failed++; }
   }
   btn.disabled = false;

@@ -1,5 +1,5 @@
 /* GIF helpers shared by the game and the leaderboard page:
-   - stampBrand: the small Taqneeq 19.0 watermark baked into every GIF frame
+   - stampBrand: the Taqneeq TQ logo baked into every GIF frame
    - encodeGif / shrinkForUpload: turn frames into a GIF, small enough for the shared board
    - rebrandGif: decode an older posted GIF, stamp every frame, re-encode (admin re-brand tool) */
 
@@ -12,55 +12,58 @@ tqLogo.src = "taqneeq-logo.jpg";
 export const logoReady = () =>
   tqLogo.complete && tqLogo.naturalWidth ? Promise.resolve() : new Promise((r) => { tqLogo.onload = r; tqLogo.onerror = r; });
 
-// A small, see-through watermark in the top-left corner of a 288×216 frame:
-// TQ logo + "TAQNEEQ 19.0" in gold on a light translucent pill, so the video shows through.
+// Watermark: just the Taqneeq TQ logo, small, in the top-left corner of a 288×216 frame.
 export function stampBrand(x) {
+  if (!(tqLogo.complete && tqLogo.naturalWidth)) return;
+  const X = 7, Y = 7, S = 30, R = 7;
   x.save();
-  const X = 6, Y = 6, H = 24, LOGO = 18;
-  x.font = "10.5px Bungee, sans-serif";
-  x.textAlign = "left"; x.textBaseline = "middle";
-  const tw = x.measureText("TAQNEEQ 19.0").width;
-  const W = 4 + LOGO + 6 + tw + 8;
-  // pill
+  x.shadowColor = "rgba(0, 0, 0, .45)"; x.shadowBlur = 4; x.shadowOffsetY = 1; // lifts it off busy backgrounds
   x.beginPath();
-  if (x.roundRect) x.roundRect(X, Y, W, H, H / 2); else x.rect(X, Y, W, H);
-  x.fillStyle = "rgba(12, 4, 24, .42)"; x.fill();
-  x.lineWidth = 1; x.strokeStyle = "rgba(255, 194, 26, .55)"; x.stroke();
-  // logo, clipped round
-  if (tqLogo.complete && tqLogo.naturalWidth) {
-    x.save();
-    x.beginPath(); x.arc(X + 3 + LOGO / 2, Y + H / 2, LOGO / 2, 0, Math.PI * 2); x.clip();
-    x.globalAlpha = 0.95; x.drawImage(tqLogo, X + 3, Y + (H - LOGO) / 2, LOGO, LOGO);
-    x.restore();
-  }
-  // wordmark with a soft shadow so it reads on bright backgrounds too
-  x.shadowColor = "rgba(0, 0, 0, .55)"; x.shadowBlur = 2; x.shadowOffsetY = 1;
-  x.fillStyle = "rgba(255, 194, 26, .95)";
-  x.fillText("TAQNEEQ 19.0", X + 4 + LOGO + 6, Y + H / 2 + 1);
+  if (x.roundRect) x.roundRect(X, Y, S, S, R); else x.rect(X, Y, S, S);
+  x.fillStyle = "#3b1a73"; x.fill(); // logo's own purple behind the clip, so the shadow has something to cast from
+  x.shadowColor = "transparent";
+  x.clip();
+  x.drawImage(tqLogo, X, Y, S, S);
   x.restore();
 }
 
-// Older GIFs carry an earlier stamp in the top-left ("67 COUNTER" text, or the big branded panel).
-// Blur that corner in place (feathered so there's no hard edge) and shade it softly, so the old stamp
-// melts into a gentle shadow behind the new see-through watermark.
-function coverOldStamp(x) {
-  const W = 236, H = 84, IN_W = 196, IN_H = 54; // fully covered area, then a soft fade out to W×H
+// Older GIFs carry an earlier stamp in the top-left. Fill that corner in like a photo editor would:
+// each column fades from the background along the very top edge (above every old stamp) to the clean
+// background just below the stamp, so the patch matches both edges. Its right side is feathered into the
+// picture, then the logo goes on top.
+//   0 = "67 COUNTER" text only; 1+ = had a branded panel/pill at some point (GIFs went 1 → 2 → …),
+//   so clean the whole area the big panel ever covered.
+const OLD_STAMP_AREA = { 0: { w: 120, h: 30 }, any: { w: 202, h: 58 } };
+function coverOldStamp(x, fromVersion = 0) {
+  const { w: IN_W, h: IN_H } = fromVersion > 0 ? OLD_STAMP_AREA.any : OLD_STAMP_AREA[0];
+  const F = 40, W = IN_W + F, H = IN_H; // F = feather width on the right
+  const cols = Math.max(2, Math.round(W / 10));
+  const strip = (y) => { // a row of averaged background colours, cols wide
+    const c = document.createElement("canvas"); c.width = cols; c.height = 1;
+    c.getContext("2d").drawImage(x.canvas, 0, y, W, 3, 0, 0, cols, 1);
+    return c;
+  };
+  const top = strip(0), bottom = strip(IN_H + 1);
   const t = document.createElement("canvas"); t.width = W; t.height = H;
   const tx = t.getContext("2d");
-  tx.filter = "blur(11px)";
-  tx.drawImage(x.canvas, 0, 0, W, H, 0, 0, W, H);
-  tx.filter = "none";
-  tx.fillStyle = "rgba(12, 4, 24, .38)"; tx.fillRect(0, 0, W, H); // soft shade
-  // feather mask: solid over the old stamp, fading out toward the right and bottom edges
-  const m = document.createElement("canvas"); m.width = W; m.height = H;
-  const mx = m.getContext("2d");
-  const gx = mx.createLinearGradient(IN_W, 0, W, 0); gx.addColorStop(0, "#000"); gx.addColorStop(1, "rgba(0,0,0,0)");
-  mx.fillStyle = gx; mx.fillRect(0, 0, W, H);
-  mx.globalCompositeOperation = "destination-in";
-  const gy = mx.createLinearGradient(0, IN_H, 0, H); gy.addColorStop(0, "#000"); gy.addColorStop(1, "rgba(0,0,0,0)");
-  mx.fillStyle = gy; mx.fillRect(0, 0, W, H);
+  tx.imageSmoothingEnabled = true; tx.imageSmoothingQuality = "high";
+  tx.drawImage(bottom, 0, 0, W, H); // bottom colours everywhere…
+  const fade = document.createElement("canvas"); fade.width = W; fade.height = H; // …top colours fading out downward
+  const fx = fade.getContext("2d");
+  fx.imageSmoothingEnabled = true;
+  fx.drawImage(top, 0, 0, W, H);
+  fx.globalCompositeOperation = "destination-in";
+  const gy = fx.createLinearGradient(0, 0, 0, H); gy.addColorStop(0, "#000"); gy.addColorStop(1, "rgba(0,0,0,0)");
+  fx.fillStyle = gy; fx.fillRect(0, 0, W, H);
+  tx.drawImage(fade, 0, 0);
+  // a touch of the frame's own grain so the patch doesn't look flat
+  tx.globalAlpha = 0.18; tx.filter = "blur(1px)";
+  tx.drawImage(x.canvas, 0, IN_H + 2, W, H, 0, 0, W, H);
+  tx.globalAlpha = 1; tx.filter = "none";
+  // feather the right edge into the picture
   tx.globalCompositeOperation = "destination-in";
-  tx.drawImage(m, 0, 0);
+  const gx = tx.createLinearGradient(IN_W, 0, W, 0); gx.addColorStop(0, "#000"); gx.addColorStop(1, "rgba(0,0,0,0)");
+  tx.fillStyle = gx; tx.fillRect(0, 0, W, H);
   x.drawImage(t, 0, 0);
 }
 
@@ -106,8 +109,9 @@ export async function shrinkForUpload(frames, delay = 125) {
 /* ---------------- re-brand an older GIF (admin tool) ---------------- */
 export const canRebrand = () => "ImageDecoder" in window;
 
-// Fetch a posted GIF (or JPEG still), stamp every frame with the branding, and return an upload-ready data URL.
-export async function rebrandGif(url) {
+// Fetch a posted GIF (or JPEG still), swap its old stamp (fromVersion = the design it has) for the current
+// logo watermark on every frame, and return an upload-ready data URL.
+export async function rebrandGif(url, fromVersion = 0) {
   await logoReady();
   await document.fonts?.ready;
   const res = await fetch(url, { cache: "no-store" });
@@ -119,7 +123,7 @@ export async function rebrandGif(url) {
   if (!type.includes("gif")) { // an old still photo: stamp it and keep it a JPEG
     const img = await createImageBitmap(new Blob([data], { type }));
     const c = frame(), x = c.getContext("2d");
-    x.drawImage(img, 0, 0, FRAME_W, FRAME_H); coverOldStamp(x); stampBrand(x);
+    x.drawImage(img, 0, 0, FRAME_W, FRAME_H); coverOldStamp(x, fromVersion); stampBrand(x);
     return c.toDataURL("image/jpeg", 0.85);
   }
 
@@ -132,7 +136,7 @@ export async function rebrandGif(url) {
     const { image } = await decoder.decode({ frameIndex: i });
     const c = frame(), x = c.getContext("2d");
     x.drawImage(image, 0, 0, FRAME_W, FRAME_H);
-    coverOldStamp(x);
+    coverOldStamp(x, fromVersion);
     stampBrand(x);
     totalMs += (image.duration || 125000) / 1000;
     image.close();

@@ -12,7 +12,7 @@
 const API = "/api/runs";
 // Version of the Taqneeq watermark baked into GIFs (gif-tools.js stampBrand). Bump it when the
 // design changes; the leaderboard's admin "re-brand" tool updates GIFs with an older version.
-export const BRAND_VERSION = 2;
+export const BRAND_VERSION = 3; // 3 = logo only
 const ADMIN_KEY = "67-admin-key";
 
 /* ---------------- mode detection ---------------- */
