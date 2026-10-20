@@ -2,8 +2,14 @@
   "name": "67-counter",
   "private": true,
   "type": "module",
-  "description": "Camera-powered six-seven speed game with a shared leaderboard",
+  "description": "Camera-powered six-seven speed game with a shared leaderboard (Fly.io + Neon Postgres)",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --env-file=.env --watch server/index.js"
+  },
   "dependencies": {
-    "@upstash/redis": "^1.39.0"
+    "express": "^5.1.0",
+    "pg": "^8.16.0"
   }
 }

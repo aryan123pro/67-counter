@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="robots" content="noindex, nofollow" />
 <title>Admin · Hall of 67 · Taqneeq 19.0</title>
+<script src="config.js"></script>
 <link rel="icon" type="image/png" href="tq-icon-64.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -107,8 +108,8 @@
       <h1>HALL OF 67 ADMIN<small>TAQNEEQ 19.0</small></h1>
     </div>
     <div class="toolbar">
-      <a class="btn ghost" href="/leaderboard.html">🏆 LEADERBOARD</a>
-      <a class="btn ghost" href="/">▶ GAME</a>
+      <a class="btn ghost" href="leaderboard.html">🏆 LEADERBOARD</a>
+      <a class="btn ghost" href="./">▶ GAME</a>
       <button class="btn ghost" id="logoutBtn" hidden>LOG OUT</button>
     </div>
   </header>
@@ -119,7 +120,7 @@
   <!-- login -->
   <form class="panel" id="login" hidden>
     <h2>🔑 ADMIN PASSWORD</h2>
-    <p class="msg">The <b>ADMIN_KEY</b> set in Vercel → Settings → Environment Variables.</p>
+    <p class="msg">The <b>ADMIN_KEY</b> secret set on the Fly app.</p>
     <input type="password" id="pw" autocomplete="current-password" placeholder="password" aria-label="Admin password" required />
     <p class="err" id="pwErr" hidden>That's not it. Try again.</p>
     <button class="btn" type="submit">UNLOCK</button>
@@ -188,12 +189,12 @@ async function boot() {
   const shared = await detect();
   if (!shared) {
     $("#notice").hidden = false;
-    $("#notice").innerHTML = "The shared online leaderboard isn't connected here, so there's nothing to manage. Open this page on the deployed site (with Upstash Redis connected in Vercel).";
+    $("#notice").innerHTML = "Can't reach the 67 Counter server, so there's nothing to manage. Open this page on the Fly site (and check its database with <b>/healthz</b>).";
     return;
   }
   if (!isAdminEnabled()) {
     $("#notice").hidden = false;
-    $("#notice").innerHTML = "Admin is switched off. Set <b>ADMIN_KEY</b> in Vercel → Settings → Environment Variables, then redeploy.";
+    $("#notice").innerHTML = "Admin is switched off. Set it with <b>fly secrets set ADMIN_KEY=…</b> (the app restarts by itself).";
     return;
   }
   if (getAdminKey() && (await checkAdmin(getAdminKey()))) return openDash();

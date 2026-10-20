@@ -1,7 +1,5 @@
-/* GET /s/<round id>  (rewritten to /api/share?id=<id> in vercel.json)
-   A shareable page for one round's GIF: big GIF, who scored what, download + share + "beat it" buttons.
+/* The shareable page for one round's GIF (served at /s/<round id>).
    Rendered on the server so WhatsApp / iMessage / Instagram DMs show a link preview with the GIF. */
-import * as db from "./_db.js";
 
 const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -54,30 +52,26 @@ ${image ? `<meta property="og:image" content="${esc(origin + image)}" />
 </html>`;
 }
 
-export default async function handler(req, res) {
-  const origin = `https://${req.headers["x-forwarded-host"] || req.headers.host}`;
-  const id = String(req.query.id || "");
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
-  let run = null;
-  if (db.connected && /^[a-z0-9-]{6,40}$/i.test(id)) {
-    try { run = await db.getRun(id); } catch (err) { console.error(err); }
-  }
+export function sharePage(run, origin) {
   if (!run || !run.hasGif) {
-    res.setHeader("Cache-Control", "public, s-maxage=30");
-    return res.status(404).send(page({
-      origin, url: `${origin}/s/${id}`, title: "67 Counter · Taqneeq 19.0", desc: "How many 6-7s can you do in 30 seconds?",
-      body: `<h1>This GIF isn't here anymore</h1><div class="btns"><a class="btn" href="/">▶ PLAY 67</a><a class="btn alt" href="/leaderboard.html">🏆 HALL OF 67</a></div>`,
-    }));
+    return {
+      status: 404,
+      html: page({
+        origin, url: `${origin}/s/`, title: "67 Counter · Taqneeq 19.0", desc: "How many 6-7s can you do in 30 seconds?",
+        body: `<h1>This GIF isn't here anymore</h1><div class="btns"><a class="btn" href="/">▶ PLAY 67</a><a class="btn alt" href="/leaderboard.html">🏆 HALL OF 67</a></div>`,
+      }),
+    };
   }
   const gif = `/api/gif?id=${run.id}&v=${run.gifV || 1}`;
   const file = `${run.name.replace(/[^\w-]+/g, "_")}-${run.score}-67s.gif`;
   const title = `${run.name} hit ${run.score} six-sevens! · Taqneeq 19.0`;
   const desc = `${run.name} did ${run.score} 6-7s in 30 seconds at Taqneeq 19.0. Think you can beat it?`;
   const url = `${origin}/s/${run.id}`;
-  res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
-  return res.status(200).send(page({
-    origin, url, title, desc, image: gif,
-    body: `
+  return {
+    status: 200,
+    html: page({
+      origin, url, title, desc, image: gif,
+      body: `
   <h1>${esc(run.name)} hit <em>${esc(run.score)}</em> six-sevens in 30s</h1>
   <div class="gif"><img src="${esc(gif)}" alt="${esc(run.name)} doing 6-7s" /></div>
   <div class="btns">
@@ -90,8 +84,9 @@ export default async function handler(req, res) {
     import { shareGif } from "/share.js";
     const note = document.getElementById("note");
     document.getElementById("share").addEventListener("click", async () => {
-      note.textContent = await shareGif(${JSON.stringify({ id: run.id, name: run.name, score: run.score, photo: gif })});
+      note.textContent = await shareGif(${JSON.stringify({ id: run.id, name: run.name, score: run.score, photo: gif }).replace(/</g, "\\u003c")});
     });
   </script>`,
-  }));
+    }),
+  };
 }

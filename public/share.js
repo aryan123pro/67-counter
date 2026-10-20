@@ -4,7 +4,8 @@
    The link (/s/<id>) is a page with the GIF, a download button and a "beat it" button.
    Returns a short message for the caller to show. */
 
-export const shareUrl = (run) => `${location.origin}/s/${encodeURIComponent(run.id)}`;
+const BASE = String(globalThis.API_BASE || "").replace(/\/$/, "") || location.origin; // share pages live on the server
+export const shareUrl = (run) => `${BASE}/s/${encodeURIComponent(run.id)}`;
 
 export async function shareGif(run) {
   const online = Boolean(run.id) && !String(run.photo || "").startsWith("data:"); // posted to the shared board

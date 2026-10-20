@@ -5,3 +5,6 @@ node_modules/
 
 # source artwork (only the resized bg-leaderboard.jpg is used)
 WhatsApp Image *.jpeg
+.env
+.env.*
+!.env.example

@@ -1,15 +1,17 @@
 /* 67 Counter leaderboard storage.
 
-   SHARED mode (deployed on Vercel with Upstash Redis connected): every device reads and writes the
+   SHARED mode (the Fly server with its Neon database): every device reads and writes the
    same online leaderboard through /api/runs. Scores post automatically; a round's GIF is only
    uploaded if the player chooses to post it (attachGif). Deleting needs the admin password.
 
-   LOCAL mode (no /api — e.g. served by a plain static server, or the database isn't connected):
+   LOCAL mode (no server — e.g. the pages opened with a plain static file server):
    everything stays in this browser's IndexedDB, exactly like before, and survives reloads.
 
    Run: { id, name, score, secs, input ("cam" | "kbd"), rate, peak, rank, photo (GIF URL or data URL | null), at } */
 
-const API = "/api/runs";
+// the server (Fly) — same site by default; see config.js to point the pages at another address
+const API_BASE = String(globalThis.API_BASE || "").replace(/\/$/, "");
+const API = `${API_BASE}/api/runs`;
 // Version of the Taqneeq watermark baked into GIFs (gif-tools.js stampBrand). Bump it when the
 // design changes; the leaderboard's admin "re-brand" tool updates GIFs with an older version.
 export const BRAND_VERSION = 3; // 3 = logo only

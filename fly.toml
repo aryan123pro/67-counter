@@ -1,0 +1,32 @@
+# Fly.io config for the 67 Counter. Change `app` to the name you create with `fly launch` / `fly apps create`.
+app = "67-counter"
+primary_region = "bom"   # Mumbai, closest to the event
+
+[build]
+
+[env]
+  PORT = "8080"
+  # PUBLIC_URL = "https://67-counter.fly.dev"   # set if you add a custom domain
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"     # keep it awake during the event — no cold starts
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
