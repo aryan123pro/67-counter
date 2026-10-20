@@ -97,6 +97,22 @@ export async function attachGif(run, dataUrl, { admin = false } = {}) {
   return data.run;
 }
 
+/** Admin: correct a round's score (shared mode needs the admin password). Returns the updated run. */
+export async function setScore(run, score) {
+  if (await detect()) {
+    const data = await fetchJson(`${API}?id=${encodeURIComponent(run.id)}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json", "x-admin-key": getAdminKey() }, body: JSON.stringify({ score }),
+    });
+    const i = lastShared.findIndex((r) => r.id === run.id);
+    if (i >= 0) lastShared[i] = data.run;
+    return data.run;
+  }
+  const updated = { ...run, score, rate: Math.round((score / run.secs) * 100) / 100, edited: true };
+  if (memory) { memory = memory.map((r) => (r.id === run.id ? updated : r)); return updated; }
+  await withStore("readwrite", (s) => s.put(updated));
+  return updated;
+}
+
 /** Permanently delete specific runs (shared mode needs the admin password). */
 export async function deleteRuns(ids) {
   if (await detect()) {

@@ -5,6 +5,7 @@
    POST   /api/runs                 → save a finished round (no GIF yet) → { run, editKey }
    PATCH  /api/runs?id=<id>         → attach the round's GIF once the player taps "post it" (needs that round's editKey,
                                       or the admin password — used by the leaderboard's "re-brand old GIFs" tool)
+   PATCH  /api/runs?id=<id> {score} → admin only: correct a round's score (speed + rank title recalculated)
    DELETE /api/runs?ids=a,b | ?all=1 → admin only: delete players' rounds or wipe the board
 
    Admin password: set ADMIN_KEY in Vercel → Settings → Environment Variables. Without it, nothing can be deleted. */
@@ -13,6 +14,19 @@ import * as db from "./_db.js";
 
 const VALID_SECS = new Set([30]); // the event runs 30-second camera rounds only
 const MAX_GIF_BYTES = 800 * 1024; // the game shrinks clips to ~550 KB before posting; keeps each Redis write under 1 MB
+
+// same rank titles as the game's results screen (index.html rankFor)
+function rankFor(score, dur) {
+  if (score === 67) return "PERFECT 67 ✨ (the prophecy)";
+  const r = score / dur;
+  if (score === 0) return "did you even move? 💀";
+  if (r < 1) return "NPC ENERGY 🧍";
+  if (r < 2) return "MID. JUST MID. 😐";
+  if (r < 3) return "KINDA COOKIN 🍳";
+  if (r < 4) return "AURA FARMER 🌾";
+  if (r < 5) return "SIGMA 67ER 🗿";
+  return "THE 67 GOD 👑";
+}
 
 const clean = (v, n) => String(v ?? "").replace(/[\u0000-\u001f\u007f<>]/g, "").replace(/\s+/g, " ").trim().slice(0, n);
 const num = (v, lo, hi) => { const x = Number(v); return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : lo; };
@@ -27,6 +41,7 @@ const isAdmin = (req) => Boolean(process.env.ADMIN_KEY && req.headers["x-admin-k
 // what everyone gets to see (never the edit key)
 const publicRun = (r) => ({
   id: r.id, name: r.name, score: r.score, secs: r.secs, input: r.input, rate: r.rate, peak: r.peak, rank: r.rank, at: r.at,
+  edited: Boolean(r.editedAt),
   // ?v= changes whenever the GIF is replaced, so the long CDN cache never serves an old copy
   photo: r.hasGif ? `/api/gif?id=${r.id}&v=${r.gifV || 1}` : null,
   branded: r.gifBranded === true ? 1 : Number(r.gifBranded) || 0, // which Taqneeq watermark version the GIF has (0 = none)
@@ -82,6 +97,18 @@ export default async function handler(req, res) {
       const b = body(req);
       const run = await db.getRun(id);
       if (!run) return res.status(404).json({ error: "no such round" });
+      // admin score correction
+      if (b.score !== undefined) {
+        if (!isAdmin(req)) return res.status(401).json({ error: "admin password needed" });
+        const score = Number(b.score);
+        if (!Number.isInteger(score) || score < 0 || score > run.secs * 20) return res.status(400).json({ error: `score must be a whole number from 0 to ${run.secs * 20}` });
+        run.score = score;
+        run.rate = Math.round((score / run.secs) * 100) / 100;
+        run.rank = rankFor(score, run.secs);
+        run.editedAt = new Date().toISOString();
+        await db.putRun(run);
+        return res.status(200).json({ run: publicRun(run) });
+      }
       if (!isAdmin(req) && (!b.editKey || !sameSecret(run.editKey, b.editKey))) return res.status(403).json({ error: "not your round" });
       const clip = parseClip(b.gif);
       if (!clip) return res.status(400).json({ error: String(b.gif || "").length > 100 ? "GIF too big" : "GIF missing" });

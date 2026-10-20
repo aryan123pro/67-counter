@@ -77,6 +77,10 @@
   dialog h3 { font-family: Bungee, sans-serif; font-size: 22px; overflow-wrap: anywhere; }
   dialog p { font-weight: 700; margin: 10px 0 18px; }
   .cbtns { display: flex; gap: 10px; justify-content: center; }
+  #eScore { display: block; width: 100%; font: 400 40px Bungee, sans-serif; text-align: center; padding: 8px; border: 3px solid var(--ink); border-radius: 12px; margin: 0 0 14px; color: var(--ink); background: #fff; }
+  .acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .round .acts { flex-direction: column; align-items: stretch; }
+  .tag.edited { background: #5c4a00; }
 
   .toast {
     position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%) translateY(140px); z-index: 30;
@@ -89,7 +93,9 @@
   @media (max-width: 560px) {
     .round { grid-template-columns: 72px minmax(0, 1fr); }
     .round img, .round .nogif { width: 72px; }
-    .round .btn { grid-column: 1 / -1; justify-self: start; }
+    .round .acts { grid-column: 1 / -1; flex-direction: row; justify-content: flex-start; }
+    summary { grid-template-columns: 52px minmax(0, 1fr); }
+    summary .acts { grid-column: 1 / -1; justify-content: flex-start; }
   }
 </style>
 </head>
@@ -138,6 +144,15 @@
   </section>
 </main>
 
+<dialog id="editDlg">
+  <form id="editForm">
+    <h3 id="eTitle">EDIT SCORE</h3>
+    <p id="eMsg"></p>
+    <input type="number" id="eScore" min="0" step="1" inputmode="numeric" required aria-label="New score" />
+    <p class="err" id="eErr" hidden></p>
+    <div class="cbtns"><button class="btn ghost" type="button" id="eCancel">CANCEL</button><button class="btn" type="submit">SAVE</button></div>
+  </form>
+</dialog>
 <dialog id="confirm">
   <h3 id="cTitle"></h3>
   <p id="cMsg"></p>
@@ -146,13 +161,14 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script type="module">
-import { allRuns, detect, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, deleteRuns, clearAll, exportBackup, attachGif, BRAND_VERSION } from "./leaderboard-store.js";
+import { allRuns, detect, isShared, isAdminEnabled, getAdminKey, setAdminKey, checkAdmin, deleteRuns, clearAll, exportBackup, attachGif, setScore, BRAND_VERSION } from "./leaderboard-store.js";
 import { rebrandGif, canRebrand } from "./gif-tools.js";
 
 const $ = (s) => document.querySelector(s);
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const when = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); };
 let runs = [];
+const openPlayers = new Set(); // keep expanded players open across refreshes
 
 let toastTimer;
 function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 2800); }
@@ -236,17 +252,25 @@ function render() {
   if (!shown.length) box.append(el("p", "msg", runs.length ? "No players match." : "No rounds yet."));
   for (const p of shown) {
     const det = el("details", "player");
+    det.open = openPlayers.has(p.name.toLowerCase());
+    det.addEventListener("toggle", () => { const k = p.name.toLowerCase(); det.open ? openPlayers.add(k) : openPlayers.delete(k); });
     const sum = el("summary");
     const ava = p.avatar ? Object.assign(new Image(), { src: p.avatar, alt: "", className: "ava", loading: "lazy" }) : el("div", "ava", "67");
     const who = el("div");
     who.append(el("div", "pname", p.name), el("div", "pmeta", `best ${p.best} · ${p.runs.length} round${p.runs.length === 1 ? "" : "s"}`));
+    const editBest = el("button", "btn sm", "✏️ EDIT SCORE");
+    editBest.title = "Change this player's score (their best round)";
+    // the round that counts on the board: their best 30s camera round (older hidden modes don't count)
+    const bestRound = p.runs.find((r) => +r.secs === 30 && r.input === "cam") || p.runs[0];
+    editBest.addEventListener("click", (e) => { e.preventDefault(); editScore(bestRound, p.name, true); });
     const del = el("button", "btn danger sm", "🗑 DELETE PLAYER");
     del.addEventListener("click", async (e) => {
       e.preventDefault();
       if (!(await ask(`Delete ${p.name}?`, `Removes all ${p.runs.length} of their round${p.runs.length === 1 ? "" : "s"} and GIFs from the shared leaderboard. This can't be undone.`))) return;
       await remove(p.runs.map((r) => r.id), `${p.name} deleted`);
     });
-    sum.append(ava, who, del);
+    const acts = el("div", "acts"); acts.append(editBest, del);
+    sum.append(ava, who, acts);
     const rounds = el("div", "rounds");
     for (const r of p.runs) {
       const row = el("div", "round");
@@ -254,13 +278,17 @@ function render() {
       const info = el("div");
       const sc = el("div", "sc", r.score);
       if (+r.secs !== 30 || r.input !== "cam") sc.append(el("span", "tag old", `${r.secs}s ${r.input === "kbd" ? "keys" : ""} · hidden`));
+      if (r.edited) sc.append(el("span", "tag edited", "edited"));
       info.append(sc, el("div", "meta", `${when(r.at)} · ${(r.rate || 0).toFixed(1)}/s · ${r.rank || ""}`));
       const rd = el("button", "btn danger sm", "🗑 DELETE");
       rd.addEventListener("click", async () => {
         if (!(await ask(`Delete this ${r.score}?`, `Removes ${p.name}'s round from ${when(r.at)} and its GIF. This can't be undone.`))) return;
         await remove([r.id], "Round deleted");
       });
-      row.append(pic, info, rd);
+      const re = el("button", "btn sm", "✏️ EDIT");
+      re.addEventListener("click", () => editScore(r, p.name, false));
+      const ra = el("div", "acts"); ra.append(re, rd);
+      row.append(pic, info, ra);
       rounds.append(row);
     }
     det.append(sum, rounds);
@@ -268,6 +296,35 @@ function render() {
   }
 }
 $("#search").addEventListener("input", render);
+
+// ---- edit a round's score ----
+let editing = null;
+function editScore(run, name, isBest) {
+  editing = run;
+  const max = (+run.secs || 30) * 20;
+  $("#eTitle").textContent = isBest ? `${name}'s SCORE` : `EDIT ${name}'s ROUND`;
+  $("#eMsg").textContent = `${isBest ? "Their best round" : "Round"} from ${when(run.at)} — currently ${run.score}. Speed and rank title update to match.`;
+  $("#eScore").value = run.score; $("#eScore").max = max;
+  $("#eErr").hidden = true;
+  $("#editDlg").showModal();
+  $("#eScore").select();
+}
+$("#eCancel").addEventListener("click", () => $("#editDlg").close());
+$("#editForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const score = Number($("#eScore").value), max = (+editing.secs || 30) * 20;
+  if (!Number.isInteger(score) || score < 0 || score > max) { $("#eErr").textContent = `Enter a whole number from 0 to ${max}.`; $("#eErr").hidden = false; return; }
+  if (score === editing.score) return $("#editDlg").close();
+  const btn = $("#editForm button[type=submit]"); btn.disabled = true;
+  try {
+    await setScore(editing, score);
+    $("#editDlg").close();
+    await reload();
+    toast(`Score set to ${score} ✏️`);
+  } catch (err) {
+    $("#eErr").textContent = `Couldn't save: ${err.message}`; $("#eErr").hidden = false;
+  } finally { btn.disabled = false; }
+});
 $("#refreshBtn").addEventListener("click", async () => { await reload(); toast("Refreshed"); });
 
 async function remove(ids, done) {
