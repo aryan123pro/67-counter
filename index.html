@@ -489,7 +489,7 @@
     <button class="mode" data-secs="60">60s MARATHON</button>
   </div>
   <div class="setting-row">
-    <label class="name-row"><span class="opt-label">NAME</span><input id="nameInput" maxlength="14" placeholder="sigma_67" autocomplete="off" /></label>
+    <label class="name-row"><span class="opt-label">NAME</span><input id="nameInput" maxlength="14" placeholder="empty = random 🎲" autocomplete="off" /></label>
   </div>
   <button class="btn" id="startBtn">▶ START 67-ING</button>
   <p class="hint">Palms up 🫴🫴, both hands in frame, then pump them up and down in turns as fast as you can. Every time your palms swap places = one rep. Light wiggles don't count.</p>
@@ -667,7 +667,21 @@ async function saveRun(run) {
 // keep the home screen's record / announcer lines in sync with rounds played on other devices
 setInterval(() => { if (!document.hidden && $("#title").classList.contains("active")) loadRuns(); }, 20000);
 
-$("#nameInput").value = store.get("67-name", "");
+// No typed name → a random one (e.g. "TurboOtter42"), so anonymous players don't all pile into one
+// profile. It's regenerated for each new player; AGAIN keeps it (same person, same profile).
+const NAME_A = ["Sigma", "Aura", "Turbo", "Rizzy", "Hyper", "Mega", "Zesty", "Goofy", "Swift", "Spicy", "Cosmic", "Rapid", "Chill", "Lucky", "Ultra", "Neon"];
+const NAME_B = ["Fox", "Panda", "Tiger", "Otter", "Koala", "Llama", "Shark", "Gecko", "Moose", "Bunny", "Raven", "Lemur", "Yak", "Duck", "Owl", "Croc"];
+const pickOne = (list) => list[(Math.random() * list.length) | 0];
+function randomName() {
+  const taken = new Set(runs.map((r) => r.name.toLowerCase()));
+  for (let i = 0; i < 50; i++) {
+    const n = `${pickOne(NAME_A)}${pickOne(NAME_B)}${10 + ((Math.random() * 90) | 0)}`; // ≤ 14 chars
+    if (!taken.has(n.toLowerCase())) return n;
+  }
+  return `Player${Date.now().toString(36).slice(-6)}`;
+}
+// typing your own name makes it yours (not auto-replaced)
+$("#nameInput").addEventListener("input", (e) => { delete e.target.dataset.auto; });
 $$(".mode[data-secs]").forEach((b) => {
   b.setAttribute("aria-pressed", String(b.dataset.secs === secs));
   b.onclick = () => {
@@ -1682,11 +1696,16 @@ async function countdown() {
   setTimeout(() => $("#banner").textContent = "", 700);
 }
 
-async function startGame() {
+async function startGame({ again = false } = {}) {
   enterFS(); // must run synchronously inside the click for the browser to allow it
   sfx.init(); music.start();
-  const name = ($("#nameInput").value.trim() || "anon").slice(0, 14);
-  store.set("67-name", $("#nameInput").value.trim());
+  const nameInput = $("#nameInput");
+  if (!nameInput.value.trim() || (nameInput.dataset.auto && !again)) {
+    nameInput.value = randomName();
+    nameInput.dataset.auto = "1";
+    toast(`No name? You're ${nameInput.value} 🎲`);
+  }
+  const name = nameInput.value.trim().slice(0, 14);
   Object.assign(game, { running: false, count: 0, times: [], peak: 0, recordBroken: false, dur: parseFloat(secs), lastKey: null, clip: inputMode === "cam" ? newClip() : null, gifUrl: null, quit: false, name });
   game.record = getRecord();
   detector.reset();
@@ -2003,8 +2022,12 @@ if (!(document.fullscreenEnabled || document.webkitFullscreenEnabled)) document.
 /* ---------- buttons ---------- */
 $("#startBtn").onclick = () => { inputMode = "cam"; startGame(); };
 $("#kbdBtn").onclick = () => { inputMode = "kbd"; startGame(); };
-$("#againBtn").onclick = () => startGame();
-$("#homeBtn").onclick = () => { inputMode = "cam"; refreshTitle(); show("title"); };
+$("#againBtn").onclick = () => startGame({ again: true }); // same player → same name
+$("#homeBtn").onclick = () => {
+  // back to the menu = next player: clear the name so they don't play under someone else's
+  const nameInput = $("#nameInput"); nameInput.value = ""; delete nameInput.dataset.auto;
+  inputMode = "cam"; refreshTitle(); show("title");
+};
 $("#quitBtn").onclick = () => { coach.stop(); game.quit = true; game.running = false; inputMode = "cam"; refreshTitle(); show("title"); };
 $("#fsBtn").onclick = $("#fsBtn2").onclick = () => (isFS() ? exitFS() : enterFS());
 syncFS();
