@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Hall of 67</title>
+<meta name="description" content="Leaderboard and player profiles for the 67 Counter." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --pink: #ff2bd6; --lime: #b6ff00; --cyan: #00e5ff; --yellow: #ffe600; --orange: #ff7a00; --red: #ff1f3d;
+    --ink: #0b0614; --paper: #fff8e7; --bg: #12021f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--paper); font-family: "Space Mono", ui-monospace, monospace;
+    min-height: 100vh; overflow-x: hidden;
+  }
+  body::before {
+    content: ""; position: fixed; inset: -50%; z-index: -1;
+    background: repeating-conic-gradient(from 0deg, #2a0640 0deg 10deg, #170228 10deg 20deg);
+    animation: spin 60s linear infinite;
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; z-index: -1;
+    background: radial-gradient(circle at 50% 30%, transparent 0 10%, rgba(18,2,31,.88) 60%);
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  button { font: inherit; cursor: pointer; }
+
+  .marquee {
+    position: sticky; top: 0; z-index: 20; background: var(--yellow); color: var(--ink);
+    border-bottom: 4px solid var(--ink); font-family: Bungee, sans-serif; font-size: 14px;
+    white-space: nowrap; overflow: hidden; padding: 6px 0;
+  }
+  .marquee span { display: inline-block; animation: marquee 22s linear infinite; }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  main { width: min(1200px, 100%); margin: 0 auto; padding: 28px 16px 60px; display: grid; gap: 34px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  h1 {
+    font-family: "Bungee Shade", Bungee, sans-serif; font-size: clamp(38px, min(6vw, 10vh), 84px); line-height: .9;
+    color: var(--yellow); text-shadow: 5px 5px 0 var(--pink), 10px 10px 0 var(--cyan); transform: rotate(-2deg);
+  }
+  .btn {
+    font-family: Bungee, sans-serif; font-size: clamp(16px, 2vw, 22px); text-decoration: none; display: inline-block;
+    background: var(--lime); color: var(--ink); border: 4px solid var(--ink); border-radius: 14px;
+    padding: 10px 20px; box-shadow: 5px 5px 0 var(--ink), 5px 5px 0 4px var(--pink);
+  }
+  .btn:hover { transform: translate(-2px,-2px) rotate(-1deg); }
+  .btn.alt { background: var(--cyan); font-size: clamp(13px, 1.5vw, 16px); }
+  label.btn { cursor: pointer; }
+  .btn.danger { background: var(--red); color: #fff; font-size: clamp(13px, 1.5vw, 16px); }
+  .prof-actions { margin-top: 14px; }
+  /* confirm pop-up */
+  dialog.confirm { width: min(460px, calc(100vw - 32px)); padding: 24px; text-align: center; overflow: visible; }
+  .confirm h3 { font-family: Bungee, sans-serif; font-size: clamp(22px, 4vw, 30px); line-height: 1.1; overflow-wrap: anywhere; }
+  .confirm p { font-weight: 700; margin: 12px 0 20px; }
+  .confirm .cbtns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .confirm .backup-hint[hidden] { display: none; }
+  .confirm .backup-hint { display: block; margin-top: 14px; font-size: 13px; font-weight: 700; color: var(--ink); text-decoration: underline; background: none; border: 0; cursor: pointer; width: 100%; }
+  .head-btns { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .note { font-weight: 700; opacity: .85; margin-top: -18px; }
+  .toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(140px); z-index: 30;
+    background: var(--lime); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px;
+    font-family: Bungee, sans-serif; padding: 10px 16px; transition: transform .25s;
+  }
+  .toast.on { transform: translateX(-50%) translateY(0); }
+  .btn:active { transform: translate(3px,3px); box-shadow: 2px 2px 0 var(--ink); }
+
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .filters .lbl { font-family: Bungee, sans-serif; color: var(--yellow); font-size: 18px; margin-right: 4px; }
+  .chip {
+    font-family: Bungee, sans-serif; font-size: clamp(14px, 1.6vw, 18px);
+    background: var(--paper); color: var(--ink); border: 3px solid var(--ink);
+    border-radius: 999px; padding: 8px 18px; box-shadow: 3px 3px 0 var(--ink);
+  }
+  .chip[aria-pressed="true"] { background: var(--yellow); transform: rotate(-3deg) scale(1.06); box-shadow: 3px 3px 0 var(--pink); }
+  .sep { width: 16px; }
+
+  h2 {
+    font-family: Bungee, sans-serif; font-size: clamp(24px, 3.5vw, 38px); color: var(--paper);
+    text-shadow: 3px 3px 0 var(--pink); margin-bottom: 16px;
+  }
+  h2 small { font-size: .5em; color: var(--cyan); text-shadow: none; margin-left: 8px; }
+
+  /* podium */
+  .podium { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: end; }
+  .spot { text-align: center; cursor: pointer; background: none; border: 0; color: inherit; }
+  .spot .pol {
+    background: #fff; padding: 10px 10px 12px; border: 4px solid var(--ink); box-shadow: 8px 8px 0 var(--cyan);
+    transition: transform .15s;
+  }
+  .spot:hover .pol { transform: rotate(0deg) scale(1.03) !important; }
+  .spot:nth-child(1) .pol { transform: rotate(-3deg); }
+  .spot:nth-child(2) .pol { transform: rotate(2deg); box-shadow: 10px 10px 0 var(--yellow); }
+  .spot:nth-child(3) .pol { transform: rotate(4deg); box-shadow: 8px 8px 0 var(--pink); }
+  .spot .ph { aspect-ratio: 4/3; width: 100%; object-fit: cover; display: block; background: #2a1b40; }
+  .spot .nm { font-family: Bungee, sans-serif; color: var(--ink); font-size: clamp(14px, 2vw, 22px); margin-top: 8px; overflow-wrap: anywhere; }
+  .spot .sc {
+    font-family: Bungee, sans-serif; font-size: clamp(36px, 6vw, 72px); line-height: 1; margin-top: 12px;
+    color: var(--yellow); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--pink);
+  }
+  .spot .medal { font-size: clamp(34px, 5vw, 54px); display: block; margin-bottom: 4px; }
+  .spot .block {
+    margin-top: 10px; background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 10px 10px 0 0;
+    font-family: Bungee, sans-serif; font-size: 30px; display: grid; place-content: center;
+  }
+  .spot:nth-child(2) .block { height: 130px; background: var(--yellow); }
+  .spot:nth-child(1) .block { height: 90px; }
+  .spot:nth-child(3) .block { height: 60px; }
+  .podium .spot:nth-child(2) { order: 0; }
+
+  /* rankings list */
+  .rankings { list-style: none; display: grid; gap: 10px; }
+  .row {
+    display: grid; grid-template-columns: 56px 54px minmax(0, 1fr) auto auto; gap: 14px; align-items: center;
+    background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 16px; padding: 8px 14px;
+    box-shadow: 5px 5px 0 var(--pink); cursor: pointer; width: 100%; text-align: left;
+  }
+  .row:hover { transform: translateX(4px); }
+  .row .pos { font-family: Bungee, sans-serif; font-size: 22px; }
+  .row .ava, .ava { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 3px solid var(--ink); background: #2a1b40; display: block; }
+  .row .nm { font-family: Bungee, sans-serif; font-size: 20px; overflow-wrap: anywhere; }
+  .row .rk { font-size: 13px; font-weight: 700; opacity: .8; }
+  .row .when { font-size: 12px; opacity: .7; text-align: right; }
+  .row .sc { font-family: Bungee, sans-serif; font-size: 34px; color: var(--pink); }
+
+  /* profiles grid */
+  .profiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; }
+  .card {
+    background: var(--paper); color: var(--ink); border: 4px solid var(--ink); border-radius: 22px; overflow: hidden;
+    box-shadow: 8px 8px 0 var(--cyan); cursor: pointer; text-align: left; padding: 0; transition: transform .15s;
+  }
+  .card:nth-child(3n+2) { box-shadow: 8px 8px 0 var(--pink); }
+  .card:nth-child(3n) { box-shadow: 8px 8px 0 var(--lime); }
+  .card:hover { transform: translate(-3px,-3px) rotate(-1deg); }
+  .card .cover { aspect-ratio: 4/3; width: 100%; object-fit: cover; display: block; background: #2a1b40; border-bottom: 4px solid var(--ink); }
+  .card .body { padding: 12px 14px 14px; display: grid; gap: 8px; }
+  .card .nm { font-family: Bungee, sans-serif; font-size: 22px; overflow-wrap: anywhere; }
+  .badge {
+    display: inline-block; font-family: Bungee, sans-serif; font-size: 13px; background: var(--yellow);
+    border: 3px solid var(--ink); border-radius: 10px; padding: 3px 8px; transform: rotate(-2deg); justify-self: start;
+  }
+  .bests { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .bests div { background: var(--ink); color: var(--paper); border-radius: 10px; padding: 6px 4px; text-align: center; }
+  .bests b { display: block; font-family: Bungee, sans-serif; font-size: 20px; color: var(--lime); }
+  .bests small { font-size: 10px; }
+  .meta { font-size: 12px; font-weight: 700; opacity: .8; }
+
+  .noimg { display: grid !important; place-items: center; font-family: Bungee, sans-serif; color: var(--yellow); font-size: 48px; }
+
+  .empty {
+    text-align: center; padding: 40px 16px; font-family: Bungee, sans-serif; font-size: clamp(20px, 3vw, 30px);
+    background: rgba(11,6,20,.7); border: 4px dashed var(--yellow); border-radius: 22px;
+  }
+  .empty .btn { margin-top: 18px; }
+
+  /* profile dialog */
+  dialog {
+    width: min(920px, calc(100vw - 32px)); max-height: calc(100vh - 32px); margin: auto;
+    background: var(--paper); color: var(--ink); border: 5px solid var(--ink); border-radius: 26px;
+    box-shadow: 12px 12px 0 var(--pink), 12px 12px 0 5px var(--ink); padding: 0; overflow: auto;
+  }
+  dialog::backdrop { background: rgba(11,6,20,.75); backdrop-filter: blur(3px); }
+  .prof-head { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 22px; padding: 22px; align-items: center; }
+  .prof-head .big { width: 220px; height: 220px; border-radius: 50%; object-fit: cover; border: 5px solid var(--ink); box-shadow: 6px 6px 0 var(--cyan); background: #2a1b40; }
+  .prof-head h3 { font-family: Bungee, sans-serif; font-size: clamp(30px, 5vw, 54px); line-height: 1; overflow-wrap: anywhere; }
+  .prof-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .prof-stats div { background: var(--ink); color: var(--paper); border-radius: 12px; padding: 8px 6px; text-align: center; }
+  .prof-stats b { display: block; font-family: Bungee, sans-serif; font-size: 24px; color: var(--yellow); }
+  .prof-stats small { font-size: 11px; }
+  .close { position: sticky; top: 10px; float: right; margin: 10px 10px 0 0; z-index: 2; }
+  .prof-sec { padding: 0 22px 22px; }
+  .prof-sec h4 { font-family: Bungee, sans-serif; font-size: 20px; margin: 6px 0 12px; }
+  .wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 16px; }
+  .shot { background: #fff; padding: 8px 8px 10px; border: 3px solid var(--ink); box-shadow: 5px 5px 0 var(--cyan); position: relative; }
+  .shot:nth-child(even) { transform: rotate(2deg); box-shadow: 5px 5px 0 var(--pink); }
+  .shot:nth-child(odd) { transform: rotate(-1.5deg); }
+  .shot img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: #2a1b40; }
+  .shot .cap { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; font-family: Bungee, sans-serif; font-size: 13px; }
+  .shot .cap b { color: var(--pink); font-size: 22px; }
+  .history { width: 100%; border-collapse: collapse; font-weight: 700; font-size: 14px; }
+  .history th { font-family: Bungee, sans-serif; font-size: 13px; text-align: left; border-bottom: 3px solid var(--ink); padding: 6px; }
+  .history td { padding: 6px; border-bottom: 2px dashed rgba(11,6,20,.25); }
+  .history td.n { font-family: Bungee, sans-serif; color: var(--pink); }
+
+  @media (max-width: 720px) {
+    .podium { gap: 10px; }
+    .spot .block { font-size: 20px; }
+    .row { grid-template-columns: 34px 44px minmax(0, 1fr) auto; gap: 10px; }
+    .row .ava { width: 44px; height: 44px; }
+    .row .when { display: none; }
+    .row .sc { font-size: 26px; }
+    .prof-head { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .prof-head .big { width: 160px; height: 160px; }
+    .prof-stats { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) { body::before, .marquee span { animation: none; } }
+</style>
+</head>
+<body>
+<div class="marquee" aria-hidden="true"><span id="marquee"></span></div>
+<main>
+  <header>
+    <h1>HALL OF 67</h1>
+    <div class="head-btns">
+      <button class="btn alt" id="backupBtn" title="Download this device's leaderboard (with photos) as a file">⬇ BACKUP</button>
+      <label class="btn alt" title="Load a backup file into this device's leaderboard">⬆ RESTORE<input type="file" id="restoreInput" accept="application/json,.json" hidden /></label>
+      <button class="btn danger" id="clearAllBtn" title="Delete every score and GIF on this device">🗑 CLEAR ALL</button>
+      <a class="btn" href="./">▶ PLAY</a>
+    </div>
+  </header>
+  <p class="note">Scores and GIFs are saved on this device only, and stay after you reload.</p>
+
+  <div class="filters" role="group" aria-label="Leaderboard filter">
+    <span class="lbl">MODE</span>
+    <button class="chip" data-secs="15">15s SPRINT</button>
+    <button class="chip" data-secs="30">30s CLASSIC</button>
+    <button class="chip" data-secs="60">60s MARATHON</button>
+    <span class="sep"></span>
+    <button class="chip" data-input="cam">📸 CAMERA</button>
+    <button class="chip" data-input="kbd">⌨️ KEYS</button>
+  </div>
+
+  <section>
+    <h2 id="topTitle">TOP 67ERS</h2>
+    <div id="podium"></div>
+    <ol class="rankings" id="rankings"></ol>
+  </section>
+
+  <section>
+    <h2>PLAYER PROFILES <small>tap anyone</small></h2>
+    <div class="profiles" id="profiles"></div>
+  </section>
+</main>
+
+<dialog id="profile"></dialog>
+<dialog id="confirm" class="confirm">
+  <h3 id="cTitle"></h3>
+  <p id="cMsg"></p>
+  <div class="cbtns">
+    <button class="btn alt" id="cNo">KEEP IT</button>
+    <button class="btn danger" id="cYes">DELETE</button>
+  </div>
+  <button class="backup-hint" id="cBackup" hidden>⬇ download a backup first</button>
+</dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<script type="module">
+import { allRuns, importRuns, exportBackup, deleteRuns, clearAll } from "./leaderboard-store.js";
+// Inside the game (embedded layer): PLAY / GO 67 just close the layer, keeping fullscreen.
+// Opened directly: go fullscreen on the first tap (browsers need a tap before allowing it).
+const embedded = new URLSearchParams(location.search).has("embed") && window.parent !== window;
+document.addEventListener("click", (e) => {
+  const play = e.target.closest('a[href="./"]');
+  if (play && embedded) { e.preventDefault(); window.parent.postMessage("67-lb-close", location.origin); }
+});
+if (embedded) {
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !document.querySelector("dialog[open]")) window.parent.postMessage("67-lb-close", location.origin);
+  });
+} else {
+  const goFull = () => {
+    const el = document.documentElement;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    try { const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: "hide" }) : el.webkitRequestFullscreen?.(); p?.catch?.(() => {}); } catch {}
+  };
+  addEventListener("pointerdown", goFull, { once: true });
+  addEventListener("keydown", goFull, { once: true });
+}
+const $ = (s, el = document) => el.querySelector(s);
+const MODES = { 15: "15s SPRINT", 30: "30s CLASSIC", 60: "60s MARATHON" };
+$("#marquee").textContent = "HALL OF 67 ✦ SIX SEVEN ✦ 👑 ✦ WHO HAS THE FASTEST HANDS ✦ 🫴🫴 ✦ ".repeat(8);
+
+let runs = await allRuns();
+let view = { secs: 30, input: "cam" };
+try { Object.assign(view, JSON.parse(localStorage.getItem("67-lb-view") || "{}")); } catch {}
+
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+function photo(src, cls, alt = "") {
+  if (src) { const i = new Image(); i.src = src; i.alt = alt; i.className = cls; i.loading = "lazy"; return i; }
+  const d = el("div", cls + " noimg", "67"); return d;
+}
+const when = (iso) => {
+  const d = new Date(iso); if (isNaN(d)) return "";
+  const s = (Date.now() - d) / 1000;
+  if (s < 60) return "just now";
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h ago`;
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+};
+const key = (name) => name.toLowerCase();
+
+// group runs into players
+function players() {
+  const map = new Map();
+  for (const r of runs) {
+    const k = key(r.name);
+    if (!map.has(k)) map.set(k, { name: r.name, runs: [] });
+    map.get(k).runs.push(r);
+  }
+  for (const p of map.values()) {
+    p.runs.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    p.name = p.runs[0].name; // latest spelling
+    p.best = {}; // best camera score per mode
+    for (const r of p.runs) if (r.input === "cam" && (!p.best[r.secs] || r.score > p.best[r.secs].score)) p.best[r.secs] = r;
+    const top = [...p.runs].sort((a, b) => (b.rate || 0) - (a.rate || 0))[0];
+    p.title = top && top.rank;
+    p.total = p.runs.reduce((n, r) => n + r.score, 0);
+    p.peak = Math.max(...p.runs.map((r) => r.peak || 0));
+    // profile picture: photo from their highest-scoring run that has one
+    const withPhoto = p.runs.filter((r) => r.photo).sort((a, b) => b.score - a.score);
+    p.avatar = withPhoto[0] && withPhoto[0].photo;
+  }
+  return [...map.values()];
+}
+
+function render() {
+  try { localStorage.setItem("67-lb-view", JSON.stringify(view)); } catch {}
+  document.querySelectorAll(".chip[data-secs]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.secs === +view.secs)));
+  document.querySelectorAll(".chip[data-input]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.input === view.input)));
+  $("#topTitle").textContent = `TOP 67ERS — ${MODES[view.secs]}${view.input === "kbd" ? " (KEYS)" : ""}`;
+
+  // best run per player in this mode
+  const best = new Map();
+  for (const r of runs) {
+    if (+r.secs !== +view.secs || r.input !== view.input) continue;
+    const b = best.get(key(r.name));
+    if (!b || r.score > b.score) best.set(key(r.name), r);
+  }
+  const ranked = [...best.values()].sort((a, b) => b.score - a.score || String(a.at).localeCompare(String(b.at)));
+
+  const podium = $("#podium"), list = $("#rankings");
+  podium.replaceChildren(); list.replaceChildren();
+  podium.className = "";
+  if (!ranked.length) {
+    const e = el("div", "empty", "No 67s in this mode yet. Be the first legend.");
+    const a = el("a", "btn", "▶ GO 67"); a.href = "./"; e.append(el("br"), a);
+    podium.append(e);
+  } else {
+    podium.className = "podium";
+    // visual order: 2nd, 1st, 3rd
+    const slots = [ranked[1], ranked[0], ranked[2]];
+    const medals = ["🥈", "👑", "🥉"];
+    slots.forEach((r, i) => {
+      const spot = el("button", "spot");
+      if (!r) { spot.style.visibility = "hidden"; podium.append(spot); return; }
+      spot.addEventListener("click", () => openProfile(key(r.name)));
+      spot.append(el("span", "medal", medals[i]));
+      const pol = el("div", "pol");
+      pol.append(photo(r.photo, "ph", `${r.name} mid-67`), el("div", "nm", r.name));
+      spot.append(pol, el("div", "sc", r.score), el("div", "block", ["2", "1", "3"][i]));
+      podium.append(spot);
+    });
+    ranked.slice(3, 50).forEach((r, i) => {
+      const li = el("li");
+      const row = el("button", "row");
+      row.addEventListener("click", () => openProfile(key(r.name)));
+      const who = el("div");
+      who.append(el("div", "nm", r.name), el("div", "rk", r.rank || ""));
+      row.append(el("span", "pos", `#${i + 4}`), photo(r.photo, "ava"), who, el("span", "when", when(r.at)), el("span", "sc", r.score));
+      li.append(row); list.append(li);
+    });
+  }
+
+  // profiles: everyone, best overall first
+  const ps = players().sort((a, b) => Math.max(0, ...Object.values(a.best).map((r) => r.score)) < Math.max(0, ...Object.values(b.best).map((r) => r.score)) ? 1 : -1);
+  const grid = $("#profiles");
+  grid.replaceChildren();
+  if (!ps.length) grid.append(el("div", "empty", "No players yet."));
+  for (const p of ps) {
+    const card = el("button", "card");
+    card.addEventListener("click", () => openProfile(key(p.name)));
+    const body = el("div", "body");
+    const bests = el("div", "bests");
+    for (const s of [15, 30, 60]) {
+      const d = el("div"); d.append(el("b", null, p.best[s] ? p.best[s].score : "—"), el("small", null, `${s}s BEST`)); bests.append(d);
+    }
+    body.append(el("div", "nm", p.name));
+    if (p.title) body.append(el("span", "badge", p.title));
+    body.append(bests, el("div", "meta", `${p.runs.length} round${p.runs.length === 1 ? "" : "s"} · ${p.total} total 67s · last ${when(p.runs[0].at)}`));
+    card.append(photo(p.avatar, "cover", `${p.name}`), body);
+    grid.append(card);
+  }
+}
+
+function openProfile(k) {
+  const p = players().find((x) => key(x.name) === k);
+  if (!p) return;
+  const dlg = $("#profile");
+  dlg.replaceChildren();
+  const close = el("button", "btn close", "✕");
+  close.setAttribute("aria-label", "Close profile");
+  close.addEventListener("click", () => dlg.close());
+
+  const head = el("div", "prof-head");
+  const info = el("div");
+  info.append(el("h3", null, p.name));
+  if (p.title) { const b = el("span", "badge", p.title); b.style.marginTop = "10px"; info.append(b); }
+  const stats = el("div", "prof-stats");
+  const best = Math.max(0, ...p.runs.map((r) => r.score));
+  for (const [v, l] of [[p.runs.length, "ROUNDS"], [best, "BEST SCORE"], [p.total, "TOTAL 67s"], [`${p.peak.toFixed(1)}/s`, "PEAK SPEED"]]) {
+    const d = el("div"); d.append(el("b", null, v), el("small", null, l)); stats.append(d);
+  }
+  info.append(stats);
+  head.append(photo(p.avatar, "big", p.name), info);
+
+  const wallSec = el("div", "prof-sec");
+  wallSec.append(el("h4", null, "🎞️ GIF WALL"));
+  const wall = el("div", "wall");
+  const shots = p.runs.filter((r) => r.photo).sort((a, b) => b.score - a.score);
+  if (!shots.length) wall.append(el("p", "meta", "No GIFs yet (keyboard rounds don't record one)."));
+  for (const r of shots) {
+    const s = el("div", "shot");
+    const cap = el("div", "cap");
+    cap.append(el("span", null, `${r.secs}s · ${when(r.at)}`), el("b", null, r.score));
+    s.append(photo(r.photo, "", `${p.name} scoring ${r.score}`), cap);
+    wall.append(s);
+  }
+  wallSec.append(wall);
+
+  const histSec = el("div", "prof-sec");
+  histSec.append(el("h4", null, "📜 EVERY ROUND"));
+  const table = el("table", "history");
+  const thead = el("tr");
+  for (const h of ["WHEN", "MODE", "SCORE", "SPEED", "RANK"]) thead.append(el("th", null, h));
+  table.append(thead);
+  for (const r of p.runs) {
+    const tr = el("tr");
+    tr.append(el("td", null, when(r.at)), el("td", null, `${r.secs}s ${r.input === "kbd" ? "⌨️" : "📸"}`), el("td", "n", r.score),
+      el("td", null, `${(r.rate || 0).toFixed(1)}/s`), el("td", null, r.rank || ""));
+    table.append(tr);
+  }
+  histSec.append(table);
+
+  const del = el("button", "btn danger", "🗑 DELETE PROFILE");
+  const actions = el("div", "prof-actions"); actions.append(del); info.append(actions);
+  del.addEventListener("click", async () => {
+    const n = p.runs.length;
+    if (!(await ask(`Delete ${p.name}?`, `This removes their ${n} round${n === 1 ? "" : "s"} and GIF${n === 1 ? "" : "s"} from this device. It can't be undone.`))) return;
+    await deleteRuns(p.runs.map((r) => r.id));
+    runs = await allRuns();
+    dlg.close(); render();
+    toast(`${p.name} deleted`);
+  });
+  dlg.append(close, head, wallSec, histSec);
+  dlg.showModal();
+}
+$("#profile").addEventListener("click", (e) => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+document.querySelectorAll(".chip[data-secs]").forEach((b) => b.addEventListener("click", () => { view.secs = +b.dataset.secs; render(); }));
+document.querySelectorAll(".chip[data-input]").forEach((b) => b.addEventListener("click", () => { view.input = b.dataset.input; render(); }));
+render();
+
+// pick up rounds played in another tab when you come back to this one
+document.addEventListener("visibilitychange", async () => {
+  if (document.hidden) return;
+  const next = await allRuns();
+  if (next.length !== runs.length) { runs = next; if (!$("#profile").open) render(); }
+});
+
+let toastTimer;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("on");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("on"), 2600);
+}
+// styled yes/no instead of window.confirm(); resolves true only on DELETE
+function ask(title, msg, { offerBackup = false } = {}) {
+  const dlg = $("#confirm");
+  $("#cTitle").textContent = title; $("#cMsg").textContent = msg; $("#cBackup").hidden = !offerBackup;
+  dlg.showModal();
+  $("#cNo").focus();
+  return new Promise((resolve) => {
+    const done = (v) => { dlg.close(); resolve(v); };
+    $("#cYes").onclick = () => done(true);
+    $("#cNo").onclick = () => done(false);
+    dlg.oncancel = () => resolve(false);
+  });
+}
+$("#cBackup").addEventListener("click", () => downloadBackup());
+$("#clearAllBtn").addEventListener("click", async () => {
+  if (!runs.length) return toast("Leaderboard is already empty");
+  const people = new Set(runs.map((r) => r.name.toLowerCase())).size;
+  if (!(await ask("Clear the whole leaderboard?", `Deletes all ${runs.length} rounds from ${people} player${people === 1 ? "" : "s"}, GIFs included, on this device. It can't be undone.`, { offerBackup: true }))) return;
+  await clearAll();
+  runs = [];
+  render();
+  toast("Leaderboard cleared 🧹");
+});
+async function downloadBackup() {
+  const url = URL.createObjectURL(await exportBackup());
+  const a = Object.assign(document.createElement("a"), { href: url, download: `67-leaderboard-${new Date().toISOString().slice(0, 10)}.json` });
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$("#backupBtn").addEventListener("click", downloadBackup);
+$("#restoreInput").addEventListener("change", async (e) => {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const added = await importRuns(Array.isArray(data) ? data : data.runs || []);
+    runs = await allRuns(); render();
+    toast(added ? `Restored ${added} round${added === 1 ? "" : "s"} 🎉` : "Nothing new in that file");
+  } catch {
+    toast("That file isn't a 67 leaderboard backup");
+  }
+});
+</script>
+</body>
+</html>
