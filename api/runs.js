@@ -2,7 +2,8 @@
 
    GET    /api/runs                 → { shared, adminEnabled, runs }   (cached a few seconds at the edge)
    GET    /api/runs?admin=1         → same, plus { admin } — send the admin password in the x-admin-key header
-   POST   /api/runs                 → save a finished round (no GIF yet) → { run, editKey }
+   POST   /api/runs                 → save a finished round (no GIF yet) → { run, editKey }; send a unique `cid`
+                                      so a retried save returns the same round instead of a duplicate
    PATCH  /api/runs?id=<id>         → attach the round's GIF once the player taps "post it" (needs that round's editKey,
                                       or the admin password — used by the leaderboard's "re-brand old GIFs" tool)
    PATCH  /api/runs?id=<id> {score} → admin only: correct a round's score (speed + rank title recalculated)
@@ -88,6 +89,15 @@ export default async function handler(req, res) {
         editKey: crypto.randomBytes(12).toString("hex"),
       };
       if (run.score <= 0) return res.status(400).json({ error: "score must be above 0" });
+      // retries of the same round (same cid from the device) return the round already saved
+      const cid = /^[a-z0-9-]{8,64}$/i.test(String(b.cid || "")) ? String(b.cid) : null;
+      if (cid) {
+        const existingId = await db.claimCid(cid, run.id);
+        if (existingId) {
+          const existing = await db.getRun(existingId);
+          if (existing) return res.status(200).json({ run: publicRun(existing), editKey: existing.editKey, duplicate: true });
+        }
+      }
       await db.addRun(run);
       return res.status(201).json({ run: publicRun(run), editKey: run.editKey });
     }

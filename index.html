@@ -353,7 +353,16 @@
   .consent .posting, .consent .done { display: none; font-family: Bungee, sans-serif; }
   .consent .failed { display: none; }
   .consent .done .btn { margin-top: 10px; }
-  .consent[data-state="posting"] .posting, .consent[data-state="done"] .done, .consent[data-state="failed"] .failed { display: block; }
+  .consent .saved, .consent .rejected { display: none; }
+  .consent[data-state="posting"] .posting, .consent[data-state="done"] .done, .consent[data-state="failed"] .failed,
+  .consent[data-state="saved"] .saved, .consent[data-state="rejected"] .rejected { display: block; }
+  /* rounds waiting to upload (shown to staff on the home screen) */
+  .pending-badge {
+    position: fixed; left: 12px; bottom: 12px; z-index: 40; font-family: Bungee, sans-serif; font-size: 13px;
+    background: #ffd000; color: #16002e; border: 3px solid #16002e; border-radius: 12px; padding: 6px 10px; cursor: pointer;
+  }
+  .pending-badge[hidden] { display: none; }
+  body.playing .pending-badge { display: none; }
   .name-row input.missing { border-color: #ffd000; box-shadow: 0 0 0 4px rgba(255, 208, 0, .55); animation: nudge .35s; }
   @keyframes nudge { 25% { translate: -6px 0; } 75% { translate: 6px 0; } }
   .polaroid p { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; color: var(--ink); font-family: Bungee, sans-serif; font-size: 14px; }
@@ -590,9 +599,11 @@
       <div class="polaroid" id="polaroid"><img id="snap" alt="Animated GIF of you mid-67" /><p>YOUR FASTEST 2.5s 🎞️</p>
         <a class="btn small gif-dl" id="gifDl" download="my-67.gif">⬇ GIF</a></div>
       <div class="card consent" id="consent" data-state="posting" hidden>
-        <p class="posting">📤 posting your GIF to the Hall of 67…</p>
-        <div class="done"><p>✅ Your GIF is on the Hall of 67!</p><button class="btn small hot" id="gifShare">📤 SHARE YOUR GIF</button></div>
-        <div class="failed"><p>Couldn't post your GIF.</p><button class="btn small" id="gifRetry">↻ TRY AGAIN</button></div>
+        <p class="posting">📤 saving to the Hall of 67…</p>
+        <div class="done"><p>✅ Saved to the Hall of 67!</p><button class="btn small hot" id="gifShare">📤 SHARE YOUR GIF</button></div>
+        <div class="saved"><p>✅ Score saved to the Hall of 67!</p></div>
+        <div class="failed"><p>⏳ No connection right now — your score<span class="wgif"> and GIF</span> will upload automatically.</p><button class="btn small" id="gifRetry">↻ TRY NOW</button></div>
+        <div class="rejected"><p>⚠️ <span id="rejectMsg">The server didn't accept this round.</span></p></div>
       </div>
       <div class="card board"><h3 id="boardTitle">HALL OF 67</h3><ol id="boardList"></ol></div>
     </div>
@@ -605,6 +616,7 @@
   <div class="intro-big">TAP ANYWHERE<br>TO ENTER</div>
 </div>
 
+<button class="pending-badge" id="pendingBadge" hidden title="Tap to retry now"></button>
 <div class="toggles">
   <button class="btn small" id="fsBtn2" aria-label="Toggle fullscreen"></button>
   <button class="btn small" id="musicBtn" aria-label="Toggle music">🎵</button>
@@ -616,7 +628,7 @@
 <div class="scanlines" aria-hidden="true"></div>
 
 <script type="module">
-import { allRuns, addRun, attachGif } from "./leaderboard-store.js";
+import { allRuns, submitRun, flushPending, onPendingChange } from "./leaderboard-store.js";
 import { stampBrand, encodeGif, shrinkForUpload, toDataUrl, UPLOAD_BUDGET } from "./gif-tools.js";
 import { shareGif, shareUrl } from "./share.js";
 /* =========================================================
@@ -659,26 +671,24 @@ function bestPerPlayer(list) {
 }
 const getBoard = () => bestPerPlayer(runs.filter((r) => String(r.secs) === secs && r.input === inputMode));
 const getRecord = () => getBoard()[0] || null;
-// Shared mode posts the score straight away, then the round's GIF is uploaded automatically.
-// If the shared board can't be reached, it's saved on this device instead (GIF included).
-async function saveRun(run) {
-  runs.push(run); // show it straight away
-  const photo = run.photo;
-  const saved = await addRun(run);
-  Object.assign(run, saved);
-  if (saved.shared) run.photo = null; // set once the upload lands
-  return { saved, photo };
-}
-async function postGif(entry) {
+// Save a finished round: the score, then its GIF. Retries automatically; if the server can't be
+// reached, the round (and GIF) waits on this device and uploads by itself as soon as it can.
+async function saveRound(entry) {
+  runs.push(entry); // show it straight away
   const consent = $("#consent");
+  const mine = () => game.lastEntry === entry;
   consent.hidden = false; consent.dataset.state = "posting";
-  try {
-    Object.assign(entry, await attachGif(entry, await gifForUpload()));
-    if (game.lastEntry === entry) consent.dataset.state = "done";
-  } catch (err) {
-    console.warn("GIF upload failed:", err);
-    if (game.lastEntry === entry) consent.dataset.state = "failed";
-  }
+  consent.querySelector(".wgif").hidden = !entry.photo;
+  let upload = null;
+  try { if (entry.photo) upload = await gifForUpload(); } catch (err) { console.warn("couldn't prepare the GIF:", err); }
+  const res = await submitRun(entry, upload);
+  if (res.state === "saved") Object.assign(entry, res.run);
+  if (!mine()) return res;
+  if (res.state === "saved") consent.dataset.state = res.gifSaved ? "done" : "saved";
+  else if (res.state === "queued") consent.dataset.state = "failed";
+  else if (res.state === "rejected") { consent.dataset.state = "rejected"; $("#rejectMsg").textContent = `The server didn't accept this round (${res.error}).`; }
+  else consent.hidden = true; // local-only mode (no server)
+  return res;
 }
 // keep the home screen's record / announcer lines in sync with rounds played on other devices
 setInterval(() => { if (!document.hidden && $("#title").classList.contains("active")) loadRuns(); }, 20000);
@@ -1763,11 +1773,9 @@ function showResults() {
     name: game.name, score, secs: +secs, input: inputMode, rate: +(score / game.dur).toFixed(2),
     peak: +game.peak.toFixed(2), rank: rankFor(score, game.dur), photo, at: new Date().toISOString(),
   };
-  const saving = score > 0 ? saveRun(entry) : null;
-  // shared board: the GIF goes up automatically
   $("#consent").hidden = true;
   game.lastEntry = entry;
-  if (photo && saving) saving.then(({ saved }) => { if (saved.shared && game.lastEntry === entry) postGif(entry); });
+  if (score > 0) saveRound(entry); // score + GIF go up automatically (with retries / upload queue)
   const top = getBoard().slice(0, 10);
   const isRecord = score > 0 && (!prev || score > prev.score);
 
@@ -1974,7 +1982,20 @@ $("#homeBtn").onclick = () => {
 $("#quitBtn").onclick = () => { coach.stop(); game.quit = true; game.running = false; refreshTitle(); show("title"); };
 $("#fsBtn").onclick = $("#fsBtn2").onclick = () => (isFS() ? exitFS() : enterFS());
 syncFS();
-$("#gifRetry").onclick = () => postGif(game.lastEntry);
+$("#gifRetry").onclick = async () => {
+  const left = await flushPending();
+
+  if (left === 0) { $("#consent").dataset.state = "saved"; toast("Uploaded ✅"); loadRuns(); }
+  else toast("Still no connection — it'll keep trying by itself");
+};
+// staff indicator: rounds on this device still waiting to upload
+onPendingChange((n) => {
+  const b = $("#pendingBadge");
+  b.hidden = !n;
+  b.textContent = `⏳ ${n} score${n === 1 ? "" : "s"} waiting to upload`;
+  if (!n) loadRuns();
+});
+$("#pendingBadge").onclick = async () => { const left = await flushPending(); toast(left ? "Still no connection — retrying automatically" : "All uploaded ✅"); };
 $("#gifShare").onclick = async () => { const msg = await shareGif(game.lastEntry); if (msg) toast(msg); };
 $("#shareBtn").onclick = async () => {
   const e = game.lastEntry, link = e?.photo && !String(e.photo).startsWith("data:") ? ` ${shareUrl(e)}` : "";

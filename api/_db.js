@@ -19,7 +19,7 @@ function memoryRedis() {
     async lrange(k, a, b) { return (lists.get(k) || []).slice(a, b === -1 ? undefined : b + 1); },
     async mget(...ks) { return ks.map((x) => kv.get(x) ?? null); },
     async get(k) { return kv.get(k) ?? null; },
-    async set(k, v) { kv.set(k, v); return "OK"; },
+    async set(k, v, opts) { if (opts?.nx && kv.has(k)) return null; kv.set(k, v); return "OK"; },
     async del(...ks) { let n = 0; for (const x of ks) n += kv.delete(x) + lists.delete(x); return n; },
     async lpush(k, ...vs) { const l = lists.get(k) || []; l.unshift(...vs.reverse()); lists.set(k, l); return l.length; },
     async lrem(k, _count, v) { const l = lists.get(k) || []; lists.set(k, l.filter((x) => x !== v)); return l.length; },
@@ -40,6 +40,13 @@ export async function listRuns(limit = 1000) {
   if (!ids.length) return [];
   const raw = await redis.mget(...ids.map((id) => `run:${id}`));
   return raw.map(parse).filter(Boolean);
+}
+
+// A retried save carries the same client id (cid). The first save claims it; later ones get the
+// original round back instead of creating a duplicate. Claims expire after 2 days.
+export async function claimCid(cid, runId) {
+  const ok = await redis.set(`cid:${cid}`, runId, { nx: true, ex: 172800 });
+  return ok === "OK" ? null : await redis.get(`cid:${cid}`);
 }
 
 export async function getRun(id) {
